@@ -86,12 +86,22 @@ fn start_media_server() -> u16 {
             if let Some(range) = range_header_val {
                 let range_str = range.replace("bytes=", "");
                 let parts: Vec<&str> = range_str.split('-').collect();
-                let start = parts[0].parse::<u64>().unwrap_or(0);
-                let end = if parts.len() > 1 && !parts[1].is_empty() {
-                    parts[1].parse::<u64>().unwrap_or(file_size - 1)
-                } else {
-                    file_size - 1
-                };
+                
+                let mut start = 0;
+                let mut end = file_size - 1;
+                
+                if parts.len() == 2 {
+                    if parts[0].is_empty() {
+                        if let Ok(suffix_len) = parts[1].parse::<u64>() {
+                            start = file_size.saturating_sub(suffix_len);
+                        }
+                    } else {
+                        start = parts[0].parse::<u64>().unwrap_or(0);
+                        if !parts[1].is_empty() {
+                            end = parts[1].parse::<u64>().unwrap_or(file_size - 1);
+                        }
+                    }
+                }
 
                 if start >= file_size || end >= file_size || start > end {
                     let mut response = Response::from_string("Range Not Satisfiable").with_status_code(416);

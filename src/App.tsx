@@ -27,7 +27,7 @@ const createDefaultProject = (videoPath: string | null = null): ProjectData => (
     finalSetPoints: 25,
     theme: 'modern-dark',
     overlaySize: 100,
-    overlayPosition: 'top-right'
+    overlayPosition: 'top-left'
   },
   events: [
     {
@@ -48,7 +48,7 @@ function App(): React.JSX.Element {
   const [projectData, setProjectData] = useState<ProjectData | null>(null)
   const [jsonPath, setJsonPath] = useState<string>('')
   const [mediaPort, setMediaPort] = useState<number>(0)
-  const [showOverlay, setShowOverlay] = useState<boolean>(true)
+  const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null)
 
   const [currentTime, setCurrentTime] = useState<number>(0)
   const [duration, setDuration] = useState<number>(0)
@@ -76,6 +76,14 @@ function App(): React.JSX.Element {
         console.error('Failed to get media port from Rust:', err)
       })
   }, [])
+
+  // 音量およびミュート状態を HTML ビデオ要素へ確実にバインド
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = volume
+      videoRef.current.muted = isMuted
+    }
+  }, [volume, isMuted, videoPath])
 
   // 動画ファイル選択 (単独ロード)
   const handleSelectVideo = async (): Promise<void> => {
@@ -309,6 +317,36 @@ function App(): React.JSX.Element {
     addScoreEvent('set_confirm', null)
   }
 
+  // 得点板表示・非表示トグルをイベントとして追加
+  const handleToggleOverlay = (): void => {
+    if (!projectData) return
+    const nextShow = !activeState.overlayVisible
+    
+    // 入力時刻を記録し、自動同期を1秒間ロック
+    lastInputTimeRef.current = Date.now()
+    
+    const timestamp = videoRef.current ? videoRef.current.currentTime : 0
+    
+    const newEvent: ScoreEvent = {
+      id: Math.random().toString(36).substring(2, 9),
+      timestamp,
+      type: 'overlay_toggle',
+      team: null,
+      overlayVisible: nextShow,
+      state: INITIAL_STATE
+    }
+
+    const updatedEvents = recalculateEventStates([...projectData.events, newEvent], projectData.matchSettings)
+    setProjectData({
+      ...projectData,
+      events: updatedEvents
+    })
+
+    const activeIndex = findActiveEventIndex(updatedEvents, timestamp)
+    setActiveEventIndex(activeIndex)
+    setActiveState(getActiveEventState(updatedEvents, timestamp))
+  }
+
   // リセット
   const handleReset = (): void => {
     if (window.confirm('現在の試合スコアを初期状態にリセットしますか？\n(履歴はクリアされます)')) {
@@ -482,6 +520,11 @@ function App(): React.JSX.Element {
   const handleLoadedMetadata = (): void => {
     if (!videoRef.current) return
     setDuration(videoRef.current.duration)
+    const width = videoRef.current.videoWidth
+    const height = videoRef.current.videoHeight
+    if (width && height) {
+      setVideoAspectRatio(width / height)
+    }
   }
 
   const handlePlay = (): void => setIsPlaying(true)
@@ -649,11 +692,15 @@ function App(): React.JSX.Element {
       <main className="main-content">
         <div className="player-section">
           {videoSrc ? (
-            <div className="video-wrapper">
+            <div 
+              className="video-wrapper"
+              style={videoAspectRatio ? { aspectRatio: `${videoAspectRatio}` } : undefined}
+            >
               <video
                 ref={videoRef}
                 src={videoSrc}
                 className="video-element"
+                muted={isMuted}
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
                 onPlay={handlePlay}
@@ -661,7 +708,7 @@ function App(): React.JSX.Element {
                 onClick={togglePlay}
               />
               {/* スコアボードの重ね合わせ表示 (ON/OFFトグル連動) */}
-              {showOverlay && <ScoreboardOverlay state={activeState} settings={scoreboardSettings} />}
+              {activeState.overlayVisible && <ScoreboardOverlay state={activeState} settings={scoreboardSettings} />}
             </div>
           ) : (
             <div className="video-placeholder" onClick={handleSelectVideo}>
@@ -770,8 +817,8 @@ function App(): React.JSX.Element {
               onSetConfirm={handleSetConfirm}
               onToggleServe={handleToggleServe}
               onReset={handleReset}
-              showOverlay={showOverlay}
-              onToggleOverlay={() => setShowOverlay(!showOverlay)}
+              showOverlay={activeState.overlayVisible}
+              onToggleOverlay={handleToggleOverlay}
             />
           ) : (
             <div className="score-control-placeholder">

@@ -23,14 +23,16 @@ export interface EventState {
   servingTeam: 'A' | 'B' | null;
   matchFinished: boolean;
   setWinner: 'A' | 'B' | null;
+  overlayVisible: boolean;
 }
 
 export interface ScoreEvent {
   id: string;
   timestamp: number;
-  type: 'serve_change' | 'point' | 'set_confirm' | 'reset' | 'set_score_direct';
+  type: 'serve_change' | 'point' | 'set_confirm' | 'reset' | 'set_score_direct' | 'overlay_toggle';
   team: 'A' | 'B' | null;
   state: EventState;
+  overlayVisible?: boolean;
 }
 
 export interface ProjectData {
@@ -47,7 +49,8 @@ export const INITIAL_STATE: EventState = {
   setScores: [],
   servingTeam: null,
   matchFinished: false,
-  setWinner: null
+  setWinner: null,
+  overlayVisible: true
 };
 
 export function findActiveEventIndex(events: ScoreEvent[], T: number): number {
@@ -94,6 +97,7 @@ export function recalculateEventStates(events: ScoreEvent[], settings: MatchSett
   let servingTeam: 'A' | 'B' | null = null;
   let matchFinished = false;
   let setWinner: 'A' | 'B' | null = null;
+  let overlayVisible = true;
 
   // 勝利に必要なセット数 (過半数)
   const totalSetsToWin = Math.ceil(settings.maxSets / 2);
@@ -155,6 +159,7 @@ export function recalculateEventStates(events: ScoreEvent[], settings: MatchSett
       servingTeam = null;
       matchFinished = false;
       setWinner = null;
+      overlayVisible = true;
     } else if (event.type === 'set_score_direct') {
       // 手動でのセット直接調整用
       if (event.team === 'A') {
@@ -162,6 +167,8 @@ export function recalculateEventStates(events: ScoreEvent[], settings: MatchSett
       } else if (event.team === 'B') {
         setsB = event.state?.setsB ?? setsB;
       }
+    } else if (event.type === 'overlay_toggle') {
+      overlayVisible = event.overlayVisible ?? !overlayVisible;
     }
 
     // 状態を現在のイベントスナップショットに保存
@@ -173,7 +180,8 @@ export function recalculateEventStates(events: ScoreEvent[], settings: MatchSett
       setScores: [...setScores],
       servingTeam,
       matchFinished,
-      setWinner
+      setWinner,
+      overlayVisible
     };
   }
 

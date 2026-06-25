@@ -38,8 +38,9 @@ export const EventList: React.FC<EventListProps> = ({
             プロジェクトJSONをロードすると、ここにスコア履歴が表示されます。
           </div>
         ) : (
-          events.map((event, idx) => {
-            const isActive = idx === activeEventIndex
+          [...events].reverse().map((event) => {
+            const originalIdx = events.findIndex(e => e.id === event.id)
+            const isActive = originalIdx === activeEventIndex
             const { state, type, team } = event
             
             let detailText = ''
@@ -47,11 +48,13 @@ export const EventList: React.FC<EventListProps> = ({
               detailText = `${team === 'A' ? teamAName || 'Aチーム' : teamBName || 'Bチーム'} サーブ権`
             } else if (type === 'point') {
               const actingTeam = team === 'A' ? teamAName || 'Aチーム' : teamBName || 'Bチーム'
-              detailText = `${actingTeam} が得点`
+              detailText = `${actingTeam} 得点`
             } else if (type === 'set_confirm') {
-              detailText = `セット確定`
+              detailText = `セット確定 (第${state.setsA + state.setsB}セット終了)`
             } else if (type === 'reset') {
-              detailText = `リセット`
+              detailText = `試合スコア リセット`
+            } else if (type === 'overlay_toggle') {
+              detailText = `得点板: ${event.overlayVisible ? '表示' : '非表示'}`
             }
 
             return (
@@ -64,7 +67,7 @@ export const EventList: React.FC<EventListProps> = ({
                   <div className="header-left">
                     <span className="event-time">{formatTime(event.timestamp)}</span>
                     <span className={`event-tag tag-${type}`}>
-                      {type === 'point' ? '得点' : type === 'serve_change' ? 'サーブ' : type === 'set_confirm' ? '確定' : 'その他'}
+                      {type === 'point' ? '得点' : type === 'serve_change' ? 'サーブ' : type === 'set_confirm' ? '確定' : type === 'overlay_toggle' ? '表示設定' : 'その他'}
                     </span>
                   </div>
                   {event.id !== 'init_serve' && (
