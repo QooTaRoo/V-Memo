@@ -1,0 +1,237 @@
+.score-controller-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  background: rgba(20, 20, 25, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.team-control-block {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+/* サーブ権を持っているチームのハイライト */
+.team-control-block.serving {
+  background: rgba(0, 255, 102, 0.02);
+  border-color: rgba(0, 255, 102, 0.2);
+  box-shadow: 0 0 15px rgba(0, 255, 102, 0.04);
+}
+
+.control-team-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+.control-serve-dot {
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0.3;
+  transition: all 0.2s ease;
+}
+
+.team-control-block.serving .control-serve-dot {
+  opacity: 1;
+  filter: drop-shadow(0 0 8px #00ff66);
+}
+
+.control-serve-dot:hover {
+  opacity: 0.8;
+  transform: scale(1.1);
+}
+
+.control-team-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+.score-adjust-buttons {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.btn-score-up, .btn-score-down {
+  flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-score-up {
+  background: rgba(0, 229, 255, 0.06);
+  border-color: rgba(0, 229, 255, 0.2);
+  font-size: 20px;
+  padding: 12px 0;
+}
+
+.btn-score-up:hover:not(:disabled) {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: rgba(0, 229, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-score-down {
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 16px;
+  padding: 8px 0;
+}
+
+.btn-score-down:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-score-up:disabled, .btn-score-down:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.sets-adjust-direct {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+}
+
+/* 中央アクションブロック */
+.center-action-block {
+  width: 220px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0 8px;
+}
+
+.set-winner-alert, .match-finished-alert {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.alert-text {
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  animation: pulse 1.5s infinite alternate;
+}
+
+.set-winner-alert .alert-text {
+  color: #ff9100;
+  text-shadow: 0 0 10px rgba(255, 145, 0, 0.3);
+}
+
+.match-finished-alert .alert-text {
+  color: #00ff66;
+  text-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
+}
+
+.btn-confirm-set {
+  background: linear-gradient(135deg, #ff9100, #ffab40);
+  border: none;
+  border-radius: 6px;
+  color: #000;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 145, 0, 0.2);
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.btn-confirm-set:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 20px rgba(255, 145, 0, 0.35);
+}
+
+.btn-reset-match {
+  background: linear-gradient(135deg, #00ff66, #69f0ae);
+  border: none;
+  border-radius: 6px;
+  color: #000;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.btn-reset-match:hover {
+  transform: scale(1.03);
+}
+
+.system-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.btn-system {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.btn-system:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.btn-system.active {
+  background: rgba(0, 229, 255, 0.05);
+  border-color: rgba(0, 229, 255, 0.2);
+  color: #00e5ff;
+}
+
+.btn-danger {
+  border-color: rgba(255, 23, 68, 0.2);
+  color: rgba(255, 23, 68, 0.7);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: rgba(255, 23, 68, 0.08) !important;
+  color: #ff1744 !important;
+  border-color: rgba(255, 23, 68, 0.4) !important;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.98); opacity: 0.8; }
+  100% { transform: scale(1.02); opacity: 1; }
+}

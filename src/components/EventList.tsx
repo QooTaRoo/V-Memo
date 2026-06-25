@@ -6,6 +6,7 @@ interface EventListProps {
   events: ScoreEvent[]
   activeEventIndex: number
   onEventClick: (timestamp: number) => void
+  onEventDelete: (timestamp: number) => void
   teamAName: string
   teamBName: string
 }
@@ -21,6 +22,7 @@ export const EventList: React.FC<EventListProps> = ({
   events,
   activeEventIndex,
   onEventClick,
+  onEventDelete,
   teamAName,
   teamBName
 }) => {
@@ -46,6 +48,10 @@ export const EventList: React.FC<EventListProps> = ({
             } else if (type === 'point') {
               const actingTeam = team === 'A' ? teamAName || 'Aチーム' : teamBName || 'Bチーム'
               detailText = `${actingTeam} が得点`
+            } else if (type === 'set_confirm') {
+              detailText = `セット確定`
+            } else if (type === 'reset') {
+              detailText = `リセット`
             }
 
             return (
@@ -55,10 +61,26 @@ export const EventList: React.FC<EventListProps> = ({
                 onClick={() => onEventClick(event.timestamp)}
               >
                 <div className="event-card-header">
-                  <span className="event-time">{formatTime(event.timestamp)}</span>
-                  <span className={`event-tag tag-${type}`}>
-                    {type === 'point' ? '得点' : 'サーブ'}
-                  </span>
+                  <div className="header-left">
+                    <span className="event-time">{formatTime(event.timestamp)}</span>
+                    <span className={`event-tag tag-${type}`}>
+                      {type === 'point' ? '得点' : type === 'serve_change' ? 'サーブ' : type === 'set_confirm' ? '確定' : 'その他'}
+                    </span>
+                  </div>
+                  {event.id !== 'init_serve' && (
+                    <button
+                      className="btn-delete-event"
+                      title="イベント削除"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (window.confirm('このイベントを削除しますか？')) {
+                          onEventDelete(event.timestamp)
+                        }
+                      }}
+                    >
+                      🗑️
+                    </button>
+                  )}
                 </div>
                 <div className="event-card-body">
                   <div className="event-detail">{detailText}</div>

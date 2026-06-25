@@ -18,6 +18,19 @@
   flex-direction: column;
   flex-shrink: 0;
   box-sizing: border-box;
+  overflow-y: auto;
+}
+
+/* スクロールバーのカスタマイズ (サイドバー用) */
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
 }
 
 .brand {
@@ -49,9 +62,9 @@
 
 .sidebar-section h3 {
   margin: 0 0 16px 0;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.4);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -106,28 +119,89 @@
   -webkit-box-orient: vertical;
 }
 
-/* 試合設定のサマリー */
-.game-info {
-  background-color: rgba(255, 255, 255, 0.01);
-  flex-grow: 1;
-  overflow-y: auto;
+/* 保存ボタンの行 */
+.save-buttons-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
 }
 
-.info-grid {
-  display: grid;
-  grid-template-columns: 80px 1fr;
-  gap: 12px 8px;
-  font-size: 13px;
+.btn-save {
+  flex: 1;
+  background: #ff9100;
+  border: none;
+  border-radius: 6px;
+  color: #000;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
 }
 
-.info-label {
-  color: rgba(255, 255, 255, 0.4);
-  font-weight: 500;
+.btn-save:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 145, 0, 0.25);
 }
 
-.info-value {
-  color: rgba(255, 255, 255, 0.85);
+.btn-save.btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.btn-save.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+}
+
+/* 設定フォームの入力欄 */
+.settings-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-group label {
+  font-size: 11px;
   font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.field-group input[type="text"], .field-group input[type="number"], .field-group select {
+  background-color: #1a1a22;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #fff;
+  padding: 8px 12px;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.field-group input[type="text"]:focus, .field-group input[type="number"]:focus, .field-group select:focus {
+  border-color: #00e5ff;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.15);
+}
+
+.field-group-row {
+  display: flex;
+  gap: 8px;
+}
+
+.field-group-row .field-group {
+  flex: 1;
+  min-width: 0;
 }
 
 /* 中央メインコンテンツ */
@@ -145,7 +219,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 24px;
+  padding: 20px;
   min-height: 0;
   background: radial-gradient(circle at center, #111116 0%, #060608 100%);
 }
@@ -229,10 +303,10 @@
 .timeline-section {
   background-color: #0e0e12;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 16px 24px;
+  padding: 14px 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
@@ -322,6 +396,13 @@
   box-shadow: 0 0 6px #00ff66;
 }
 
+.marker-set_confirm {
+  background-color: #ff9100;
+  box-shadow: 0 0 6px #ff9100;
+  height: 8px; /* セット獲得は少し大きめに */
+  width: 8px;
+}
+
 /* コントロール群 */
 .controls-container {
   display: flex;
@@ -360,7 +441,7 @@
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
-  padding: 8px 18px;
+  padding: 6px 16px;
   border-radius: 20px;
   font-weight: 600;
   font-size: 13px;
@@ -434,6 +515,24 @@
   border-radius: 50%;
   background: #fff;
   cursor: pointer;
+}
+
+/* スコア操作パネルエリア */
+.score-control-section {
+  background-color: #0e0e12;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 14px 20px 20px 20px;
+  flex-shrink: 0;
+}
+
+.score-control-placeholder {
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 24px 0;
+  background: rgba(20, 20, 25, 0.15);
+  border: 1px dashed rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
 }
 
 /* 右サイドバー: イベント履歴 */

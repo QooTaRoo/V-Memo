@@ -208,3 +208,45 @@
   border-radius: 3px;
   font-family: monospace;
 }
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tag-set_confirm {
+  background: rgba(255, 145, 0, 0.15);
+  color: #ff9100;
+  border: 1px solid rgba(255, 145, 0, 0.1);
+}
+
+.tag-reset {
+  background: rgba(255, 68, 68, 0.15);
+  color: #ff4444;
+  border: 1px solid rgba(255, 68, 68, 0.1);
+}
+
+.btn-delete-event {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 12px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.event-card:hover .btn-delete-event {
+  opacity: 0.6;
+}
+
+.btn-delete-event:hover {
+  background: rgba(255, 68, 68, 0.15);
+  opacity: 1 !important;
+  transform: scale(1.15);
+}

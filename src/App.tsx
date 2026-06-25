@@ -1,11 +1,45 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { ScoreboardOverlay } from './components/ScoreboardOverlay'
 import { EventList, formatTime } from './components/EventList'
-import { ProjectData, getActiveEventState, findActiveEventIndex, INITIAL_STATE, EventState } from './utils/scoreEngine'
-import { open } from '@tauri-apps/plugin-dialog'
-import { readTextFile } from '@tauri-apps/plugin-fs'
+import { ScoreController } from './components/ScoreController'
+import {
+  ProjectData,
+  getActiveEventState,
+  findActiveEventIndex,
+  recalculateEventStates,
+  INITIAL_STATE,
+  EventState,
+  ScoreEvent,
+  MatchSettings
+} from './utils/scoreEngine'
+import { open, save } from '@tauri-apps/plugin-dialog'
+import { readTextFile, writeTextFile, exists } from '@tauri-apps/plugin-fs'
 import { invoke } from '@tauri-apps/api/core'
 import './App.css'
+
+// デフォルトの新規プロジェクトテンプレート
+const createDefaultProject = (videoPath: string | null = null): ProjectData => ({
+  matchSettings: {
+    teamAName: '大宮東',
+    teamBName: '伊奈学園',
+    maxSets: 3,
+    normalSetPoints: 25,
+    finalSetPoints: 25,
+    theme: 'modern-dark',
+    overlaySize: 100,
+    overlayPosition: 'top-right'
+  },
+  events: [
+    {
+      id: 'init_serve',
+      timestamp: 0,
+      type: 'serve_change',
+      team: 'A',
+      state: INITIAL_STATE
+    }
+  ],
+  videoPath
+})
 
 function App(): React.JSX.Element {
   // アプリケーションの状態管理
@@ -14,6 +48,7 @@ function App(): React.JSX.Element {
   const [projectData, setProjectData] = useState<ProjectData | null>(null)
   const [jsonPath, setJsonPath] = useState<string>('')
   const [mediaPort, setMediaPort] = useState<number>(0)
+  const [showOverlay, setShowOverlay] = useState<boolean>(true)
 
   const [currentTime, setCurrentTime] = useState<number>(0)
   const [duration, setDuration] = useState<number>(0)
@@ -28,6 +63,7 @@ function App(): React.JSX.Element {
   // 参照 (Ref) 管理
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const isSeeking = useRef<boolean>(false)
+  const lastInputTimeRef = useRef<number>(0) // 競合防止ロック用
 
   // 初期ロード時に Rust 側のメディアサーバーのポートを取得
   useEffect(() => {
@@ -41,7 +77,7 @@ function App(): React.JSX.Element {
       })
   }, [])
 
-  // 動画ファイル選択 (Tauri plugin-dialog 使用)
+  // 動画ファイル選択 (単独ロード)
   const handleSelectVideo = async (): Promise<void> => {
     try {
       const selected = await open({
@@ -58,6 +94,22 @@ function App(): React.JSX.Element {
         setVideoName(name)
         setIsPlaying(false)
         setCurrentTime(0)
+
+        // プロジェクトがない場合はデフォルト新規プロジェクトを自動生成
+        if (!projectData) {
+          const newProj = createDefaultProject(selected)
+          // 初期化して再計算
+          newProj.events = recalculateEventStates(newProj.events, newProj.matchSettings)
+          setProjectData(newProj)
+          setActiveEventIndex(0)
+          setActiveState(newProj.events[0].state)
+        } else {
+          // すでにプロジェクトがある場合は、動画パスを差し替え
+          setProjectData({
+            ...projectData,
+            videoPath: selected
+          })
+        }
       }
     } catch (err: any) {
       console.error('Error selecting video:', err)
@@ -65,7 +117,7 @@ function App(): React.JSX.Element {
     }
   }
 
-  // プロジェクトJSON選択 (Tauri plugin-dialog & plugin-fs 使用)
+  // プロジェクトJSON選択 (動画自動ロード付き)
   const handleSelectJson = async (): Promise<void> => {
     try {
       const selected = await open({
@@ -79,18 +131,271 @@ function App(): React.JSX.Element {
       if (selected && typeof selected === 'string') {
         setJsonPath(selected)
         const content = await readTextFile(selected)
-        const data = JSON.parse(content)
+        const data = JSON.parse(content) as ProjectData
+        
+        // 状態を綺麗に再計算して適用 (データの整合性担保)
+        data.events = recalculateEventStates(data.events, data.matchSettings)
         setProjectData(data)
         
-        // ロード時に現在の再生時間におけるスコアを復元
         const index = findActiveEventIndex(data.events, currentTime)
         setActiveEventIndex(index)
         setActiveState(getActiveEventState(data.events, currentTime))
+
+        // 動画の自動ロード
+        if (data.videoPath) {
+          const videoExists = await exists(data.videoPath)
+          if (videoExists) {
+            setVideoPath(data.videoPath)
+            const name = data.videoPath.split(/[/\\]/).pop() || ''
+            setVideoName(name)
+            console.log('Video auto-loaded:', data.videoPath)
+          } else {
+            alert(
+              `関連付けられた動画ファイルが見つかりませんでした。\nファイルが存在するか確認し、手動で動画を読み込んでください。\n(検索したパス: ${data.videoPath})`
+            )
+          }
+        }
       }
     } catch (err: any) {
       console.error('Error selecting JSON:', err)
       alert('JSONの読み込みに失敗しました: ' + err.message)
     }
+  }
+
+  // プロジェクトの保存 (上書き / 別名保存)
+  const handleSaveProject = async (saveAs: boolean = false): Promise<void> => {
+    if (!projectData) return
+
+    try {
+      let targetPath = jsonPath
+      if (saveAs || !jsonPath) {
+        const selected = await save({
+          filters: [{
+            name: 'Project JSON',
+            extensions: ['json']
+          }],
+          defaultPath: 'match_project.json'
+        })
+        if (!selected) return // キャンセル
+        targetPath = selected
+      }
+
+      // 保存するデータ構造を整理 (現在の動画絶対パスを格納)
+      const dataToSave: ProjectData = {
+        ...projectData,
+        videoPath: videoPath
+      }
+
+      await writeTextFile(targetPath, JSON.stringify(dataToSave, null, 2))
+      setJsonPath(targetPath)
+      alert('プロジェクトを保存しました！')
+    } catch (err: any) {
+      console.error('Save failed:', err)
+      alert('プロジェクトの保存に失敗しました: ' + err.message)
+    }
+  }
+
+  // 現在の時間に基づいてアクティブなイベントの状態を特定し、UIに反映する処理
+  const updateScoreState = (time: number): void => {
+    if (!projectData) return
+    const activeIndex = findActiveEventIndex(projectData.events, time)
+    setActiveEventIndex(activeIndex)
+    setActiveState(getActiveEventState(projectData.events, time))
+  }
+
+  // イベントを選択したときに、動画の再生時間を変更し、状態を同期する
+  const handleEventClick = (timestamp: number): void => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = timestamp
+    }
+    setCurrentTime(timestamp)
+    if (projectData) {
+      const activeIndex = findActiveEventIndex(projectData.events, timestamp)
+      setActiveEventIndex(activeIndex)
+      setActiveState(getActiveEventState(projectData.events, timestamp))
+    }
+  }
+
+  // 共通のスコアイベント追加ロジック (ラグ補正・競合防止ロック含む)
+  const addScoreEvent = (
+    type: 'point' | 'serve_change' | 'set_confirm' | 'reset' | 'set_score_direct',
+    team: 'A' | 'B' | null,
+    manualTimestamp?: number
+  ): void => {
+    if (!projectData) return
+
+    // 入力時刻を記録し、自動同期を1秒間ロック
+    lastInputTimeRef.current = Date.now()
+
+    let timestamp = videoRef.current ? videoRef.current.currentTime : 0
+    if (manualTimestamp !== undefined) {
+      timestamp = manualTimestamp
+    } else if (type === 'point' || type === 'serve_change') {
+      // 反応ラグ補正 (自動で0.3秒前。ただし0秒未満にならないようガード)
+      timestamp = Math.max(0, timestamp - 0.3)
+    }
+
+    const newEvent: ScoreEvent = {
+      id: Math.random().toString(36).substring(2, 9),
+      timestamp,
+      type,
+      team,
+      state: INITIAL_STATE // 再計算で代入されるため初期状態
+    }
+
+    const updatedEvents = recalculateEventStates([...projectData.events, newEvent], projectData.matchSettings)
+    
+    const updatedProj = {
+      ...projectData,
+      events: updatedEvents
+    }
+    setProjectData(updatedProj)
+
+    // 新しく追加した時間に近い状態に同期
+    const activeIndex = findActiveEventIndex(updatedEvents, timestamp)
+    setActiveEventIndex(activeIndex)
+    setActiveState(getActiveEventState(updatedEvents, timestamp))
+  }
+
+  // 得点加算 (+1)
+  const handleAddPoint = (team: 'A' | 'B'): void => {
+    addScoreEvent('point', team)
+  }
+
+  // 得点減算 (-1): 現在時間以前で直近の該当チームの得点イベントを履歴から削除
+  const handleRemovePoint = (team: 'A' | 'B'): void => {
+    if (!projectData) return
+    
+    // 入力時刻を記録し、自動同期を1秒間ロック
+    lastInputTimeRef.current = Date.now()
+
+    const timeLimit = videoRef.current ? videoRef.current.currentTime : 0
+
+    // 現在時間以前で、そのチームの最後の得点イベントを探す
+    let targetIndex = -1
+    for (let i = projectData.events.length - 1; i >= 0; i--) {
+      const ev = projectData.events[i]
+      if (ev.timestamp <= timeLimit && ev.type === 'point' && ev.team === team) {
+        targetIndex = i
+        break
+      }
+    }
+
+    if (targetIndex !== -1) {
+      // 見つかったイベントを削除
+      const newEvents = projectData.events.filter((_, idx) => idx !== targetIndex)
+      // 再計算
+      const updatedEvents = recalculateEventStates(newEvents, projectData.matchSettings)
+      
+      setProjectData({
+        ...projectData,
+        events: updatedEvents
+      })
+
+      // 状態の同期
+      const activeIndex = findActiveEventIndex(updatedEvents, timeLimit)
+      setActiveEventIndex(activeIndex)
+      setActiveState(getActiveEventState(updatedEvents, timeLimit))
+    }
+  }
+
+  // サーブ権切り替え
+  const handleToggleServe = (team: 'A' | 'B'): void => {
+    addScoreEvent('serve_change', team)
+  }
+
+  // セット確定
+  const handleSetConfirm = (): void => {
+    addScoreEvent('set_confirm', null)
+  }
+
+  // リセット
+  const handleReset = (): void => {
+    if (window.confirm('現在の試合スコアを初期状態にリセットしますか？\n(履歴はクリアされます)')) {
+      const resetEvents = [
+        {
+          id: 'init_serve',
+          timestamp: 0,
+          type: 'serve_change' as const,
+          team: 'A' as const,
+          state: INITIAL_STATE
+        }
+      ]
+      const updatedEvents = recalculateEventStates(resetEvents, projectData?.matchSettings || createDefaultProject().matchSettings)
+      
+      setProjectData({
+        ...projectData!,
+        events: updatedEvents
+      })
+      setActiveEventIndex(0)
+      setActiveState(updatedEvents[0].state)
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0
+      }
+      setCurrentTime(0)
+    }
+  }
+
+  // イベント個別削除
+  const handleEventDelete = (timestamp: number): void => {
+    if (!projectData) return
+    
+    // 入力時刻を記録し、自動同期を1秒間ロック
+    lastInputTimeRef.current = Date.now()
+
+    // 指定されたタイムスタンプのイベントを探す
+    // 同時に複数のイベントが全く同じ時間にある場合も考慮し、その時間に最も合致するものを1つ消す
+    const targetIdx = projectData.events.findIndex(e => e.timestamp === timestamp)
+    
+    if (targetIdx !== -1) {
+      // 0秒時点の初期サーブ権イベントは削除できないガード
+      if (projectData.events[targetIdx].id === 'init_serve') {
+        alert('初期イベントは削除できません。')
+        return
+      }
+
+      const newEvents = projectData.events.filter((_, idx) => idx !== targetIdx)
+      const updatedEvents = recalculateEventStates(newEvents, projectData.matchSettings)
+
+      setProjectData({
+        ...projectData,
+        events: updatedEvents
+      })
+
+      const checkTime = videoRef.current ? videoRef.current.currentTime : 0
+      const activeIndex = findActiveEventIndex(updatedEvents, checkTime)
+      setActiveEventIndex(activeIndex)
+      setActiveState(getActiveEventState(updatedEvents, checkTime))
+    }
+  }
+
+  // 試合基本設定・表示設定の変更
+  const handleSettingChange = <K extends keyof MatchSettings>(key: K, value: MatchSettings[K]): void => {
+    let currentProj = projectData
+    if (!currentProj) {
+      currentProj = createDefaultProject(videoPath)
+    }
+
+    const updatedSettings = {
+      ...currentProj.matchSettings,
+      [key]: value
+    }
+
+    // 設定変更に伴い全イベントのスコア状態を再計算 (目標得点やセット数の変更があるため)
+    const updatedEvents = recalculateEventStates(currentProj.events, updatedSettings)
+
+    const updatedProj = {
+      ...currentProj,
+      matchSettings: updatedSettings,
+      events: updatedEvents
+    }
+
+    setProjectData(updatedProj)
+    
+    const checkTime = videoRef.current ? videoRef.current.currentTime : 0
+    const activeIndex = findActiveEventIndex(updatedEvents, checkTime)
+    setActiveEventIndex(activeIndex)
+    setActiveState(getActiveEventState(updatedEvents, checkTime))
   }
 
   // 再生・一時停止の切り替え
@@ -105,7 +410,7 @@ function App(): React.JSX.Element {
     }
   }
 
-  // 1フレーム送り・戻し (30fps換算)
+  // 1フレーム送り・戻し
   const stepFrame = (direction: 'forward' | 'backward'): void => {
     if (!videoRef.current) return
     const frameTime = 1 / 30
@@ -129,7 +434,7 @@ function App(): React.JSX.Element {
     }
   }
 
-  // ミュート切り替え
+  // ミュート
   const toggleMute = (): void => {
     if (!videoRef.current) return
     const nextMute = !isMuted
@@ -137,7 +442,7 @@ function App(): React.JSX.Element {
     videoRef.current.muted = nextMute
   }
 
-  // 再生速度変更
+  // 再生速度
   const handlePlaybackRateChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     const rate = parseFloat(e.target.value)
     setPlaybackRate(rate)
@@ -146,7 +451,7 @@ function App(): React.JSX.Element {
     }
   }
 
-  // タイムラインシーク操作
+  // シーク
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     isSeeking.current = true
     const newTime = parseFloat(e.target.value)
@@ -157,31 +462,18 @@ function App(): React.JSX.Element {
     updateScoreState(newTime)
   }
 
-  // タイムライン操作終了
   const handleSeekEnd = (): void => {
     isSeeking.current = false
   }
 
-  // 履歴リストのイベントクリック時シーク
-  const handleEventClick = (timestamp: number): void => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = timestamp
-    }
-    setCurrentTime(timestamp)
-    updateScoreState(timestamp)
-  }
-
-  // 再生時間に応じたスコア状態の更新 (一方向データ更新)
-  const updateScoreState = (time: number): void => {
-    if (!projectData) return
-    const index = findActiveEventIndex(projectData.events, time)
-    setActiveEventIndex(index)
-    setActiveState(getActiveEventState(projectData.events, time))
-  }
-
-  // ビデオ要素のイベントハンドラ
   const handleTimeUpdate = (): void => {
     if (!videoRef.current || isSeeking.current) return
+    
+    // 入力後1秒間は、再生時間経過による自動同期をブロック (上書き防止ロック)
+    if (Date.now() - lastInputTimeRef.current < 1000) {
+      return
+    }
+
     const time = videoRef.current.currentTime
     setCurrentTime(time)
     updateScoreState(time)
@@ -195,7 +487,7 @@ function App(): React.JSX.Element {
   const handlePlay = (): void => setIsPlaying(true)
   const handlePause = (): void => setIsPlaying(false)
 
-  // 初期ロード時のキーボードショートカット設定
+  // キーボードショートカット
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.code === 'Space' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'SELECT') {
@@ -213,21 +505,16 @@ function App(): React.JSX.Element {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isPlaying, duration])
 
-  // RustのHTTPサーバー経由で安全に動画をロード (CORS, Range, WebKitのHEVCデコードに対応)
+  // TauriアセットプロトコルURIの生成
   const videoSrc = videoPath && mediaPort
     ? `http://127.0.0.1:${mediaPort}/?path=${encodeURIComponent(videoPath)}`
     : ''
 
-  // 表示位置・倍率の設定 (未ロード時はデフォルト)
-  const scoreboardSettings = projectData?.matchSettings || {
-    teamAName: 'Aチーム',
-    teamBName: 'Bチーム',
-    maxSets: 3,
-    normalSetPoints: 25,
-    finalSetPoints: 25,
-    theme: 'modern-dark',
-    overlaySize: 100,
-    overlayPosition: 'top-right' as const
+  const scoreboardSettings = projectData?.matchSettings || createDefaultProject().matchSettings
+
+  // 自前でイベントリストをラッピングし、削除用イベントを仲介
+  const handleEventListClick = (timestamp: number): void => {
+    handleEventClick(timestamp)
   }
 
   return (
@@ -240,7 +527,7 @@ function App(): React.JSX.Element {
         </div>
 
         <div className="sidebar-section">
-          <h3>ファイル読み込み</h3>
+          <h3>プロジェクト・メディア</h3>
           <div className="file-buttons">
             <button className={`btn-file ${videoPath ? 'loaded' : ''}`} onClick={handleSelectVideo}>
               <span className="icon">📁</span>
@@ -254,32 +541,111 @@ function App(): React.JSX.Element {
             </button>
             {jsonPath && <div className="file-name-preview" title={jsonPath}>{jsonPath.split(/[/\\]/).pop()}</div>}
           </div>
+
+          {projectData && (
+            <div className="save-buttons-row">
+              <button className="btn-save" onClick={() => handleSaveProject(false)}>
+                💾 上書き保存
+              </button>
+              <button className="btn-save btn-secondary" onClick={() => handleSaveProject(true)}>
+                別名保存...
+              </button>
+            </div>
+          )}
         </div>
 
-        {projectData && (
-          <div className="sidebar-section game-info">
-            <h3>試合設定</h3>
-            <div className="info-grid">
-              <div className="info-label">チームA</div>
-              <div className="info-value">{scoreboardSettings.teamAName}</div>
-              
-              <div className="info-label">チームB</div>
-              <div className="info-value">{scoreboardSettings.teamBName}</div>
+        {/* 試合設定フォーム */}
+        <div className="sidebar-section game-settings-form">
+          <h3>試合設定</h3>
+          <div className="settings-fields">
+            <div className="field-group">
+              <label>チームA名</label>
+              <input
+                type="text"
+                value={scoreboardSettings.teamAName}
+                onChange={(e) => handleSettingChange('teamAName', e.target.value)}
+              />
+            </div>
+            
+            <div className="field-group">
+              <label>チームB名</label>
+              <input
+                type="text"
+                value={scoreboardSettings.teamBName}
+                onChange={(e) => handleSettingChange('teamBName', e.target.value)}
+              />
+            </div>
 
-              <div className="info-label">マッチ形式</div>
-              <div className="info-value">{scoreboardSettings.maxSets} セットマッチ</div>
+            <div className="field-group-row">
+              <div className="field-group">
+                <label>最大セット</label>
+                <select
+                  value={scoreboardSettings.maxSets}
+                  onChange={(e) => handleSettingChange('maxSets', parseInt(e.target.value))}
+                >
+                  <option value={1}>1</option>
+                  <option value={3}>3</option>
+                  <option value={5}>5</option>
+                </select>
+              </div>
 
-              <div className="info-label">目標得点</div>
-              <div className="info-value">通常 {scoreboardSettings.normalSetPoints} 点 / 最終 {scoreboardSettings.finalSetPoints} 点</div>
+              <div className="field-group">
+                <label>通常得点</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={scoreboardSettings.normalSetPoints}
+                  onChange={(e) => handleSettingChange('normalSetPoints', parseInt(e.target.value) || 25)}
+                />
+              </div>
 
-              <div className="info-label">表示位置</div>
-              <div className="info-value">{scoreboardSettings.overlayPosition} ({scoreboardSettings.overlaySize}%)</div>
+              <div className="field-group">
+                <label>最終得点</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={scoreboardSettings.finalSetPoints}
+                  onChange={(e) => handleSettingChange('finalSetPoints', parseInt(e.target.value) || 15)}
+                />
+              </div>
             </div>
           </div>
-        )}
+        </div>
+
+        {/* 得点板表示設定 */}
+        <div className="sidebar-section overlay-settings-form">
+          <h3>得点板プレビュー設定</h3>
+          <div className="settings-fields">
+            <div className="field-group-row">
+              <div className="field-group">
+                <label>位置</label>
+                <select
+                  value={scoreboardSettings.overlayPosition}
+                  onChange={(e) => handleSettingChange('overlayPosition', e.target.value as any)}
+                >
+                  <option value="top-left">左上</option>
+                  <option value="top-right">右上</option>
+                  <option value="bottom-left">左下</option>
+                  <option value="bottom-right">右下</option>
+                </select>
+              </div>
+
+              <div className="field-group">
+                <label>サイズ (%)</label>
+                <input
+                  type="number"
+                  min={40}
+                  max={150}
+                  value={scoreboardSettings.overlaySize}
+                  onChange={(e) => handleSettingChange('overlaySize', parseInt(e.target.value) || 100)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </aside>
 
-      {/* 中央ペイン: メインプレイヤー & タイムライン */}
+      {/* 中央ペイン: メインプレイヤー & タイムライン & 操作パネル */}
       <main className="main-content">
         <div className="player-section">
           {videoSrc ? (
@@ -294,8 +660,8 @@ function App(): React.JSX.Element {
                 onPause={handlePause}
                 onClick={togglePlay}
               />
-              {/* スコアボードの重ね合わせ表示 */}
-              <ScoreboardOverlay state={activeState} settings={scoreboardSettings} />
+              {/* スコアボードの重ね合わせ表示 (ON/OFFトグル連動) */}
+              {showOverlay && <ScoreboardOverlay state={activeState} settings={scoreboardSettings} />}
             </div>
           ) : (
             <div className="video-placeholder" onClick={handleSelectVideo}>
@@ -335,7 +701,7 @@ function App(): React.JSX.Element {
                       className={`timeline-marker marker-${event.type}`}
                       style={{ left: `${leftPos}%` }}
                       title={`${formatTime(event.timestamp)} - ${event.type}`}
-                      onClick={() => handleEventClick(event.timestamp)}
+                      onClick={() => handleEventListClick(event.timestamp)}
                     />
                   )
                 })}
@@ -391,6 +757,28 @@ function App(): React.JSX.Element {
             </div>
           </div>
         </div>
+
+        {/* スコア操作パネル */}
+        <div className="score-control-section">
+          {projectData ? (
+            <ScoreController
+              state={activeState}
+              settings={scoreboardSettings}
+              disabled={!videoPath}
+              onAddPoint={handleAddPoint}
+              onRemovePoint={handleRemovePoint}
+              onSetConfirm={handleSetConfirm}
+              onToggleServe={handleToggleServe}
+              onReset={handleReset}
+              showOverlay={showOverlay}
+              onToggleOverlay={() => setShowOverlay(!showOverlay)}
+            />
+          ) : (
+            <div className="score-control-placeholder">
+              動画またはプロジェクトJSONをロードすると、スコア操作パネルが有効になります。
+            </div>
+          )}
+        </div>
       </main>
 
       {/* 右ペイン: イベント履歴 */}
@@ -398,7 +786,8 @@ function App(): React.JSX.Element {
         <EventList
           events={projectData?.events || []}
           activeEventIndex={activeEventIndex}
-          onEventClick={handleEventClick}
+          onEventClick={handleEventListClick}
+          onEventDelete={handleEventDelete}
           teamAName={scoreboardSettings.teamAName}
           teamBName={scoreboardSettings.teamBName}
         />
