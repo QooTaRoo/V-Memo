@@ -272,42 +272,6 @@ function App(): React.JSX.Element {
     addScoreEvent('point', team)
   }
 
-  // 得点減算 (-1): 現在時間以前で直近の該当チームの得点イベントを履歴から削除
-  const handleRemovePoint = (team: 'A' | 'B'): void => {
-    if (!projectData) return
-    
-    // 入力時刻を記録し、自動同期を1秒間ロック
-    lastInputTimeRef.current = Date.now()
-
-    const timeLimit = videoRef.current ? videoRef.current.currentTime : 0
-
-    // 現在時間以前で、そのチームの最後の得点イベントを探す
-    let targetIndex = -1
-    for (let i = projectData.events.length - 1; i >= 0; i--) {
-      const ev = projectData.events[i]
-      if (ev.timestamp <= timeLimit && ev.type === 'point' && ev.team === team) {
-        targetIndex = i
-        break
-      }
-    }
-
-    if (targetIndex !== -1) {
-      // 見つかったイベントを削除
-      const newEvents = projectData.events.filter((_, idx) => idx !== targetIndex)
-      // 再計算
-      const updatedEvents = recalculateEventStates(newEvents, projectData.matchSettings)
-      
-      setProjectData({
-        ...projectData,
-        events: updatedEvents
-      })
-
-      // 状態の同期
-      const activeIndex = findActiveEventIndex(updatedEvents, timeLimit)
-      setActiveEventIndex(activeIndex)
-      setActiveState(getActiveEventState(updatedEvents, timeLimit))
-    }
-  }
 
   // サーブ権切り替え
   const handleToggleServe = (team: 'A' | 'B'): void => {
@@ -347,6 +311,29 @@ function App(): React.JSX.Element {
     const activeIndex = findActiveEventIndex(updatedEvents, timestamp)
     setActiveEventIndex(activeIndex)
     setActiveState(getActiveEventState(updatedEvents, timestamp))
+  }
+
+  // 直近のイベントを1件削除するUndo機能 (初期イベントは除く)
+  const handleUndo = (): void => {
+    if (!projectData || projectData.events.length <= 1) return
+
+    // 入力時刻を記録し、自動同期を1秒間ロック
+    lastInputTimeRef.current = Date.now()
+
+    // 最後のイベントを削除
+    const newEvents = projectData.events.slice(0, -1)
+    const updatedEvents = recalculateEventStates(newEvents, projectData.matchSettings)
+
+    setProjectData({
+      ...projectData,
+      events: updatedEvents
+    })
+
+    // 同期処理
+    const checkTime = videoRef.current ? videoRef.current.currentTime : 0
+    const activeIndex = findActiveEventIndex(updatedEvents, checkTime)
+    setActiveEventIndex(activeIndex)
+    setActiveState(getActiveEventState(updatedEvents, checkTime))
   }
 
   // リセット
@@ -444,6 +431,8 @@ function App(): React.JSX.Element {
     if (isPlaying) {
       videoRef.current.pause()
     } else {
+      videoRef.current.muted = isMuted
+      videoRef.current.volume = volume
       videoRef.current.play().catch((err) => {
         console.error('Play failed:', err)
       })
@@ -529,7 +518,13 @@ function App(): React.JSX.Element {
     }
   }
 
-  const handlePlay = (): void => setIsPlaying(true)
+  const handlePlay = (): void => {
+    setIsPlaying(true)
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted
+      videoRef.current.volume = volume
+    }
+  }
   const handlePause = (): void => setIsPlaying(false)
 
   // キーボードショートカット
@@ -703,6 +698,7 @@ function App(): React.JSX.Element {
                 src={videoSrc}
                 className="video-element"
                 muted={isMuted}
+                playsInline
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
                 onPlay={handlePlay}
@@ -815,12 +811,13 @@ function App(): React.JSX.Element {
               settings={scoreboardSettings}
               disabled={!videoPath}
               onAddPoint={handleAddPoint}
-              onRemovePoint={handleRemovePoint}
               onSetConfirm={handleSetConfirm}
               onToggleServe={handleToggleServe}
               onReset={handleReset}
               showOverlay={activeState.overlayVisible}
               onToggleOverlay={handleToggleOverlay}
+              onUndo={handleUndo}
+              canUndo={projectData ? projectData.events.length > 1 : false}
             />
           ) : (
             <div className="score-control-placeholder">

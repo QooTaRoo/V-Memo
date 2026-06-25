@@ -261,3 +261,34 @@
   0% { transform: scale(0.98); opacity: 0.8; }
   100% { transform: scale(1.02); opacity: 1; }
 }
+
+.center-controls-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.btn-system-undo {
+  background: rgba(255, 145, 0, 0.05) !important;
+  border-color: rgba(255, 145, 0, 0.25) !important;
+  color: #ff9100 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 10px rgba(255, 145, 0, 0.05);
+}
+
+.btn-system-undo:hover:not(:disabled) {
+  background: rgba(255, 145, 0, 0.15) !important;
+  border-color: rgba(255, 145, 0, 0.5) !important;
+  color: #ffb74d !important;
+  box-shadow: 0 4px 15px rgba(255, 145, 0, 0.15);
+}
+
+.btn-system-undo:disabled {
+  opacity: 0.15;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.01) !important;
+  box-shadow: none;
+}

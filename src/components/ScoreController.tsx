@@ -7,12 +7,13 @@ interface ScoreControllerProps {
   settings: MatchSettings
   disabled: boolean
   onAddPoint: (team: 'A' | 'B') => void
-  onRemovePoint: (team: 'A' | 'B') => void
   onSetConfirm: () => void
   onToggleServe: (team: 'A' | 'B') => void
   onReset: () => void
   showOverlay: boolean
   onToggleOverlay: () => void
+  onUndo: () => void
+  canUndo: boolean
 }
 
 export const ScoreController: React.FC<ScoreControllerProps> = ({
@@ -20,12 +21,13 @@ export const ScoreController: React.FC<ScoreControllerProps> = ({
   settings,
   disabled,
   onAddPoint,
-  onRemovePoint,
   onSetConfirm,
   onToggleServe,
   onReset,
   showOverlay,
-  onToggleOverlay
+  onToggleOverlay,
+  onUndo,
+  canUndo
 }) => {
   const { scoreA, scoreB, setsA, setsB, servingTeam, setWinner, matchFinished } = state
   const { teamAName, teamBName } = settings
@@ -50,14 +52,6 @@ export const ScoreController: React.FC<ScoreControllerProps> = ({
           >
             {scoreA}
           </button>
-          <button
-            className="btn-undo"
-            onClick={() => onRemovePoint('A')}
-            disabled={disabled || scoreA === 0 || matchFinished}
-            title="得点取り消し (Undo)"
-          >
-            ↩️ Undo
-          </button>
         </div>
 
         <div className="sets-adjust-direct">
@@ -67,32 +61,43 @@ export const ScoreController: React.FC<ScoreControllerProps> = ({
 
       {/* 中央アクションブロック (確定ボタンやシステム操作) */}
       <div className="center-action-block">
-        {setWinner ? (
-          <div className="set-winner-alert">
-            <div className="alert-text">
-              {setWinner === 'A' ? teamAName || 'Aチーム' : teamBName || 'Bチーム'} がセット獲得！
+        <div className="center-controls-wrapper">
+          <button 
+            className="btn-system btn-system-undo" 
+            onClick={onUndo} 
+            disabled={disabled || !canUndo}
+            title="直前の操作を取り消し (Undo)"
+          >
+            ↩️ 操作を取り消す (Undo)
+          </button>
+          
+          {setWinner ? (
+            <div className="set-winner-alert">
+              <div className="alert-text">
+                {setWinner === 'A' ? teamAName || 'Aチーム' : teamBName || 'Bチーム'} がセット獲得！
+              </div>
+              <button className="btn-confirm-set" onClick={onSetConfirm} disabled={disabled}>
+                セット獲得を確定する
+              </button>
             </div>
-            <button className="btn-confirm-set" onClick={onSetConfirm} disabled={disabled}>
-              セット獲得を確定する
-            </button>
-          </div>
-        ) : matchFinished ? (
-          <div className="match-finished-alert">
-            <div className="alert-text">試合終了</div>
-            <button className="btn-reset-match" onClick={onReset} disabled={disabled}>
-              試合リセット
-            </button>
-          </div>
-        ) : (
-          <div className="system-controls">
-            <button className={`btn-system ${showOverlay ? 'active' : ''}`} onClick={onToggleOverlay} disabled={disabled}>
-              {showOverlay ? '得点板: 表示中' : '得点板: 非表示'}
-            </button>
-            <button className="btn-system btn-danger" onClick={onReset} disabled={disabled}>
-              最初からリセット
-            </button>
-          </div>
-        )}
+          ) : matchFinished ? (
+            <div className="match-finished-alert">
+              <div className="alert-text">試合終了</div>
+              <button className="btn-reset-match" onClick={onReset} disabled={disabled}>
+                試合リセット
+              </button>
+            </div>
+          ) : (
+            <div className="system-controls">
+              <button className={`btn-system ${showOverlay ? 'active' : ''}`} onClick={onToggleOverlay} disabled={disabled}>
+                {showOverlay ? '得点板: 表示中' : '得点板: 非表示'}
+              </button>
+              <button className="btn-system btn-danger" onClick={onReset} disabled={disabled}>
+                最初からリセット
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* チームB操作ブロック */}
@@ -112,14 +117,6 @@ export const ScoreController: React.FC<ScoreControllerProps> = ({
             title="得点追加 (+1)"
           >
             {scoreB}
-          </button>
-          <button
-            className="btn-undo"
-            onClick={() => onRemovePoint('B')}
-            disabled={disabled || scoreB === 0 || matchFinished}
-            title="得点取り消し (Undo)"
-          >
-            ↩️ Undo
           </button>
         </div>
 
