@@ -122,8 +122,8 @@
   padding-top: 8px;
   display: flex;
   gap: 14px;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .past-set-item {

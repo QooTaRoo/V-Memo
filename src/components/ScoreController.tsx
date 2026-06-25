@@ -41,20 +41,22 @@ export const ScoreController: React.FC<ScoreControllerProps> = ({
           <h4>{teamAName || 'Aチーム'}</h4>
         </div>
         
-        <div className="score-adjust-buttons">
+        <div className="score-adjust-section">
           <button
-            className="btn-score-up"
+            className="btn-score-number"
             onClick={() => onAddPoint('A')}
             disabled={disabled || setWinner !== null || matchFinished}
+            title="得点追加 (+1)"
           >
-            +1
+            {scoreA}
           </button>
           <button
-            className="btn-score-down"
+            className="btn-undo"
             onClick={() => onRemovePoint('A')}
             disabled={disabled || scoreA === 0 || matchFinished}
+            title="得点取り消し (Undo)"
           >
-            -1
+            ↩️ Undo
           </button>
         </div>
 
@@ -102,20 +104,22 @@ export const ScoreController: React.FC<ScoreControllerProps> = ({
           <h4>{teamBName || 'Bチーム'}</h4>
         </div>
 
-        <div className="score-adjust-buttons">
+        <div className="score-adjust-section">
           <button
-            className="btn-score-up"
+            className="btn-score-number"
             onClick={() => onAddPoint('B')}
             disabled={disabled || setWinner !== null || matchFinished}
+            title="得点追加 (+1)"
           >
-            +1
+            {scoreB}
           </button>
           <button
-            className="btn-score-down"
+            className="btn-undo"
             onClick={() => onRemovePoint('B')}
             disabled={disabled || scoreB === 0 || matchFinished}
+            title="得点取り消し (Undo)"
           >
-            -1
+            ↩️ Undo
           </button>
         </div>
 
