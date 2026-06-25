@@ -1,0 +1,445 @@
+/* 全体コンテナ */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: #0c0c0e;
+  color: #e2e2e7;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* 左サイドバー: ファイル選択 & 設定 */
+.sidebar {
+  width: 280px;
+  background-color: #121216;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.logo-icon {
+  font-size: 24px;
+}
+
+.brand h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #00e5ff, #00ff66);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sidebar-section {
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.file-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #fff;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.btn-file:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-file.loaded {
+  background: rgba(0, 229, 255, 0.04);
+  border-color: rgba(0, 229, 255, 0.25);
+  color: #00e5ff;
+}
+
+.btn-file.loaded:hover {
+  background: rgba(0, 229, 255, 0.08);
+  border-color: rgba(0, 229, 255, 0.4);
+}
+
+.file-name-preview {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  word-break: break-all;
+  padding: 0 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* 試合設定のサマリー */
+.game-info {
+  background-color: rgba(255, 255, 255, 0.01);
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px 8px;
+  font-size: 13px;
+}
+
+.info-label {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 500;
+}
+
+.info-value {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+
+/* 中央メインコンテンツ */
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #08080a;
+  min-width: 0;
+}
+
+/* ビデオプレイヤーエリア */
+.player-section {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  min-height: 0;
+  background: radial-gradient(circle at center, #111116 0%, #060608 100%);
+}
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.video-element {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.video-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px dashed rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.video-placeholder:hover {
+  border-color: rgba(0, 229, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.01);
+}
+
+.placeholder-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.placeholder-icon {
+  font-size: 48px;
+}
+
+.placeholder-content p {
+  margin: 0;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #00e5ff, #00d2f0);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(0, 229, 255, 0.2);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.35);
+}
+
+/* タイムライン & コントロールエリア */
+.timeline-section {
+  background-color: #0e0e12;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* シークバー */
+.seekbar-container {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.seekbar-input {
+  width: 100%;
+  -webkit-appearance: none;
+  background: transparent;
+  margin: 0;
+  z-index: 5;
+  cursor: pointer;
+}
+
+.seekbar-input:focus {
+  outline: none;
+}
+
+.seekbar-input::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.seekbar-input:hover::-webkit-slider-runnable-track {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.seekbar-input::-webkit-slider-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: #00e5ff;
+  -webkit-appearance: none;
+  margin-top: -4px;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+  transition: transform 0.1s ease;
+}
+
+.seekbar-input:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+}
+
+.event-markers-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 6px;
+  pointer-events: none;
+  z-index: 4;
+  margin: 0 7px;
+}
+
+.timeline-marker {
+  position: absolute;
+  top: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.timeline-marker:hover {
+  transform: translateX(-50%) scale(1.8);
+  z-index: 10;
+}
+
+.marker-point {
+  background-color: #00e5ff;
+  box-shadow: 0 0 6px #00e5ff;
+}
+
+.marker-serve_change {
+  background-color: #00ff66;
+  box-shadow: 0 0 6px #00ff66;
+}
+
+/* コントロール群 */
+.controls-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.controls-left, .controls-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.btn-control {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-control:hover:not(:disabled) {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.btn-control:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-play-pause {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-play-pause:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-play-pause:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.time-display {
+  font-family: 'SF Mono', Consolas, monospace;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+
+.control-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.control-item select {
+  background-color: #1a1a22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-mute {
+  background: none;
+  border: none;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.volume-slider {
+  width: 70px;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.1);
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* 右サイドバー: イベント履歴 */
+.events-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}

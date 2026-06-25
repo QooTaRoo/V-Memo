@@ -1,0 +1,142 @@
+.scoreboard-overlay {
+  position: absolute;
+  z-index: 10;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.overlay-pos-top-left {
+  top: 30px;
+  left: 30px;
+}
+.overlay-pos-top-right {
+  top: 30px;
+  right: 30px;
+}
+.overlay-pos-bottom-left {
+  bottom: 30px;
+  left: 30px;
+}
+.overlay-pos-bottom-right {
+  bottom: 30px;
+  right: 30px;
+}
+
+.scoreboard-glass {
+  background: rgba(10, 10, 12, 0.7);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 18px;
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 250px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #ffffff;
+}
+
+.scoreboard-teams {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.team-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+}
+
+.serve-indicator-container {
+  width: 12px;
+  height: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.serve-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: transparent;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.serve-dot.active {
+  background-color: #00ff66;
+  box-shadow: 0 0 10px #00ff66, 0 0 20px #00ff66;
+  transform: scale(1.2);
+}
+
+.team-name {
+  flex-grow: 1;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.team-score {
+  font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 24px;
+  font-weight: 700;
+  color: #00e5ff;
+  min-width: 32px;
+  text-align: right;
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+  letter-spacing: -0.5px;
+}
+
+.team-sets {
+  display: flex;
+  gap: 5px;
+  margin-left: 6px;
+}
+
+.set-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.set-dot.filled {
+  background-color: #ff9100;
+  border-color: #ffb74d;
+  box-shadow: 0 0 8px #ff9100, 0 0 15px rgba(255, 145, 0, 0.5);
+  transform: scale(1.1);
+}
+
+.past-set-scores {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.past-set-item {
+  display: flex;
+  gap: 4px;
+}
+
+.past-set-label {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.past-set-value {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
