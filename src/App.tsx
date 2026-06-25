@@ -13,7 +13,6 @@ import {
   MatchSettings
 } from './utils/scoreEngine'
 import { open, save } from '@tauri-apps/plugin-dialog'
-import { readTextFile, writeTextFile, exists } from '@tauri-apps/plugin-fs'
 import { invoke } from '@tauri-apps/api/core'
 import './App.css'
 
@@ -138,7 +137,7 @@ function App(): React.JSX.Element {
 
       if (selected && typeof selected === 'string') {
         setJsonPath(selected)
-        const content = await readTextFile(selected)
+        const content = await invoke<string>('load_project_json', { path: selected })
         const data = JSON.parse(content) as ProjectData
         
         // 状態を綺麗に再計算して適用 (データの整合性担保)
@@ -151,7 +150,7 @@ function App(): React.JSX.Element {
 
         // 動画の自動ロード
         if (data.videoPath) {
-          const videoExists = await exists(data.videoPath)
+          const videoExists = await invoke<boolean>('check_file_exists', { path: data.videoPath })
           if (videoExists) {
             setVideoPath(data.videoPath)
             const name = data.videoPath.split(/[/\\]/).pop() || ''
@@ -194,7 +193,10 @@ function App(): React.JSX.Element {
         videoPath: videoPath
       }
 
-      await writeTextFile(targetPath, JSON.stringify(dataToSave, null, 2))
+      await invoke('save_project_json', {
+        path: targetPath,
+        content: JSON.stringify(dataToSave, null, 2)
+      })
       setJsonPath(targetPath)
       alert('プロジェクトを保存しました！')
     } catch (err: any) {
