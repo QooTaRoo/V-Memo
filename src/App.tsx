@@ -13,7 +13,7 @@ import {
   MatchSettings
 } from './utils/scoreEngine'
 import { open, save } from '@tauri-apps/plugin-dialog'
-import { invoke } from '@tauri-apps/api/core'
+import { invoke, convertFileSrc } from '@tauri-apps/api/core'
 import './App.css'
 
 // デフォルトの新規プロジェクトテンプレート
@@ -46,7 +46,6 @@ function App(): React.JSX.Element {
   const [videoName, setVideoName] = useState<string>('')
   const [projectData, setProjectData] = useState<ProjectData | null>(null)
   const [jsonPath, setJsonPath] = useState<string>('')
-  const [mediaPort, setMediaPort] = useState<number>(0)
   const [videoAspectRatio, setVideoAspectRatio] = useState<number | null>(null)
 
   const [currentTime, setCurrentTime] = useState<number>(0)
@@ -81,17 +80,6 @@ function App(): React.JSX.Element {
     }
   }
 
-  // 初期ロード時に Rust 側のメディアサーバーのポートを取得
-  useEffect(() => {
-    invoke<number>('get_media_port')
-      .then((port) => {
-        setMediaPort(port)
-        console.log('Media server port retrieved:', port)
-      })
-      .catch((err) => {
-        console.error('Failed to get media port from Rust:', err)
-      })
-  }, [])
 
   // 音量およびミュート状態を HTML ビデオ要素へ確実にバインド
   useEffect(() => {
@@ -566,9 +554,7 @@ function App(): React.JSX.Element {
   }, [isPlaying, duration])
 
   // TauriアセットプロトコルURIの生成
-  const videoSrc = videoPath && mediaPort
-    ? `http://127.0.0.1:${mediaPort}/?path=${encodeURIComponent(videoPath)}`
-    : ''
+  const videoSrc = videoPath ? convertFileSrc(videoPath) : ''
 
   const scoreboardSettings = projectData?.matchSettings || createDefaultProject().matchSettings
 
