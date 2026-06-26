@@ -80,6 +80,27 @@ function App(): React.JSX.Element {
     }
   }
 
+  const playTestTone = (): void => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      
+      osc.type = 'sine'
+      osc.frequency.value = 440 // A4 tone
+      gain.gain.setValueAtTime(0.15, ctx.currentTime) // gentle volume
+      
+      osc.start()
+      osc.stop(ctx.currentTime + 0.3)
+      console.log('Speaker test tone played successfully')
+    } catch (e: any) {
+      console.error('Failed to play test tone:', e)
+      alert('テスト音の再生に失敗しました: ' + e.message)
+    }
+  }
+
 
   // 音量およびミュート状態を HTML ビデオ要素へ確実にバインド
   useEffect(() => {
@@ -815,11 +836,30 @@ function App(): React.JSX.Element {
           </div>
           {videoPath && (
             <div className="debug-media-status">
-              MIME: {videoPath.toLowerCase().endsWith('.mov') ? 'video/quicktime' : videoPath.toLowerCase().endsWith('.webm') ? 'video/webm' : 'video/mp4'} | 
-              Err: {videoErrorMsg} | 
-              Muted (State/DOM): {isMuted ? 'Muted' : 'Unmuted'} / {videoDomMuted ? 'Muted' : 'Unmuted'} | 
-              Vol (State/DOM): {volume} / {videoDomVolume.toFixed(2)} | 
-              URL: {videoSrc}
+              <div>
+                MIME: {videoPath.toLowerCase().endsWith('.mov') ? 'video/quicktime' : videoPath.toLowerCase().endsWith('.webm') ? 'video/webm' : 'video/mp4'} | 
+                Err: {videoErrorMsg} | 
+                Muted (State/DOM): {isMuted ? 'Muted' : 'Unmuted'} / {videoDomMuted ? 'Muted' : 'Unmuted'} | 
+                Vol (State/DOM): {volume} / {videoDomVolume.toFixed(2)} | 
+                URL: {videoSrc}
+              </div>
+              <div style={{ marginTop: '6px' }}>
+                <button 
+                  onClick={playTestTone}
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    backgroundColor: '#00e5ff',
+                    color: '#08080a',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  🔊 スピーカーテスト音 (440Hz) を再生
+                </button>
+              </div>
             </div>
           )}
         </div>
