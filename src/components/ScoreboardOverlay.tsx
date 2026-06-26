@@ -26,7 +26,7 @@ export const ScoreboardOverlay: React.FC<ScoreboardOverlayProps> = ({ state, set
           {/* チームA */}
           <div className="team-row">
             <div className="serve-indicator-container">
-              {servingTeam === 'A' && <span className="serve-dot active" />}
+              {servingTeam === 'A' && <span className="serve-volleyball">🏐</span>}
             </div>
             <span className="team-name">{teamAName || 'TEAM A'}</span>
             <span className="team-score">{scoreA}</span>
@@ -40,7 +40,7 @@ export const ScoreboardOverlay: React.FC<ScoreboardOverlayProps> = ({ state, set
           {/* チームB */}
           <div className="team-row">
             <div className="serve-indicator-container">
-              {servingTeam === 'B' && <span className="serve-dot active" />}
+              {servingTeam === 'B' && <span className="serve-volleyball">🏐</span>}
             </div>
             <span className="team-name">{teamBName || 'TEAM B'}</span>
             <span className="team-score">{scoreB}</span>

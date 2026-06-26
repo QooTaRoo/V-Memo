@@ -6,20 +6,20 @@
 }
 
 .overlay-pos-top-left {
-  top: 30px;
-  left: 30px;
+  top: 15px;
+  left: 15px;
 }
 .overlay-pos-top-right {
-  top: 30px;
-  right: 30px;
+  top: 15px;
+  right: 15px;
 }
 .overlay-pos-bottom-left {
-  bottom: 30px;
-  left: 30px;
+  bottom: 15px;
+  left: 15px;
 }
 .overlay-pos-bottom-right {
-  bottom: 30px;
-  right: 30px;
+  bottom: 15px;
+  right: 15px;
 }
 
 .scoreboard-glass {
@@ -48,35 +48,35 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 36px;
+  height: 42px;
 }
 
 .serve-indicator-container {
-  width: 12px;
-  height: 12px;
+  width: 20px;
+  height: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.serve-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: transparent;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+.serve-volleyball {
+  font-size: 16px;
+  display: inline-block;
+  line-height: 1;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
+  animation: volleyball-pulse 2s infinite ease-in-out;
 }
 
-.serve-dot.active {
-  background-color: #00ff66;
-  box-shadow: 0 0 10px #00ff66, 0 0 20px #00ff66;
-  transform: scale(1.2);
+@keyframes volleyball-pulse {
+  0% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3)); }
+  50% { transform: scale(1.15) rotate(15deg); filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)); }
+  100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3)); }
 }
 
 .team-name {
   flex-grow: 1;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 18px;
   letter-spacing: 0.5px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -86,10 +86,10 @@
 
 .team-score {
   font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 700;
   color: #00e5ff;
-  min-width: 32px;
+  min-width: 38px;
   text-align: right;
   text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
   letter-spacing: -0.5px;
@@ -122,7 +122,7 @@
   padding-top: 8px;
   display: flex;
   gap: 14px;
-  font-size: 13px;
+  font-size: 15px;
   color: rgba(255, 255, 255, 0.7);
 }
 

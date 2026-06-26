@@ -132,7 +132,14 @@ fn start_media_server() -> u16 {
                         return;
                     }
 
-                    let chunk_size = end - start + 1;
+                    // チャンクサイズを最大2MBに制限してソケットのブロッキングと大容量メモリ確保を防止
+                    let max_chunk_size = 2 * 1024 * 1024; // 2MB
+                    let mut chunk_size = end - start + 1;
+                    if chunk_size > max_chunk_size {
+                        end = start + max_chunk_size - 1;
+                        chunk_size = max_chunk_size;
+                    }
+
                     let mut buffer = vec![0; chunk_size as usize];
                     if file.seek(SeekFrom::Start(start)).is_err() || file.read_exact(&mut buffer).is_err() {
                         let _ = request.respond(Response::from_string("Read error").with_status_code(500));

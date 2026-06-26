@@ -516,6 +516,9 @@ function App(): React.JSX.Element {
     if (width && height) {
       setVideoAspectRatio(width / height)
     }
+    // メディアロード完了時に音量・ミュート状態を強制同期（WebKit対策）
+    videoRef.current.volume = volume
+    videoRef.current.muted = isMuted
   }
 
   const handlePlay = (): void => {
@@ -697,7 +700,6 @@ function App(): React.JSX.Element {
                 ref={videoRef}
                 src={videoSrc}
                 className="video-element"
-                muted={isMuted}
                 playsInline
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
