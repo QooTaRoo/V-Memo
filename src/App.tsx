@@ -59,10 +59,27 @@ function App(): React.JSX.Element {
   const [activeEventIndex, setActiveEventIndex] = useState<number>(-1)
   const [activeState, setActiveState] = useState<EventState>(INITIAL_STATE)
 
+  // メディアデバッグ用ステート
+  const [videoDomMuted, setVideoDomMuted] = useState<boolean>(false)
+  const [videoDomVolume, setVideoDomVolume] = useState<number>(1)
+  const [videoErrorMsg, setVideoErrorMsg] = useState<string>('None')
+
   // 参照 (Ref) 管理
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const isSeeking = useRef<boolean>(false)
   const lastInputTimeRef = useRef<number>(0) // 競合防止ロック用
+
+  const syncVideoDomState = (): void => {
+    if (videoRef.current) {
+      setVideoDomMuted(videoRef.current.muted)
+      setVideoDomVolume(videoRef.current.volume)
+      if (videoRef.current.error) {
+        setVideoErrorMsg(`Code ${videoRef.current.error.code}: ${videoRef.current.error.message}`)
+      } else {
+        setVideoErrorMsg('None')
+      }
+    }
+  }
 
   // 初期ロード時に Rust 側のメディアサーバーのポートを取得
   useEffect(() => {
@@ -701,10 +718,17 @@ function App(): React.JSX.Element {
                 src={videoSrc}
                 className="video-element"
                 playsInline
-                onTimeUpdate={handleTimeUpdate}
-                onLoadedMetadata={handleLoadedMetadata}
-                onPlay={handlePlay}
-                onPause={handlePause}
+                onTimeUpdate={() => { handleTimeUpdate(); syncVideoDomState(); }}
+                onLoadedMetadata={() => { handleLoadedMetadata(); syncVideoDomState(); }}
+                onPlay={() => { handlePlay(); syncVideoDomState(); }}
+                onPause={() => { handlePause(); syncVideoDomState(); }}
+                onVolumeChange={syncVideoDomState}
+                onError={(e) => {
+                  const err = (e.target as HTMLVideoElement).error;
+                  if (err) {
+                    setVideoErrorMsg(`Code ${err.code}: ${err.message}`);
+                  }
+                }}
                 onClick={togglePlay}
               />
               {/* スコアボードの重ね合わせ表示 (ON/OFFトグル連動) */}
@@ -803,6 +827,15 @@ function App(): React.JSX.Element {
               </div>
             </div>
           </div>
+          {videoPath && (
+            <div className="debug-media-status">
+              MIME: {videoPath.toLowerCase().endsWith('.mov') ? 'video/quicktime' : videoPath.toLowerCase().endsWith('.webm') ? 'video/webm' : 'video/mp4'} | 
+              Err: {videoErrorMsg} | 
+              Muted (State/DOM): {isMuted ? 'Muted' : 'Unmuted'} / {videoDomMuted ? 'Muted' : 'Unmuted'} | 
+              Vol (State/DOM): {volume} / {videoDomVolume.toFixed(2)} | 
+              URL: {videoSrc}
+            </div>
+          )}
         </div>
 
         {/* スコア操作パネル */}

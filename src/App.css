@@ -560,3 +560,17 @@ html, body {
   display: flex;
   flex-direction: column;
 }
+
+/* デバッグメディアステータス */
+.debug-media-status {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background-color: rgba(26, 26, 34, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-family: 'SF Mono', Consolas, Menlo, monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  word-break: break-all;
+  line-height: 1.4;
+}

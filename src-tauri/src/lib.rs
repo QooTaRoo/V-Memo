@@ -20,6 +20,9 @@ fn start_media_server() -> u16 {
         for request in server.incoming_requests() {
             thread::spawn(move || {
                 let method = request.method();
+                let url_str = request.url();
+
+                // OPTIONS preflight
                 if method == &tiny_http::Method::Options {
                     let cors_origin = Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap();
                     let cors_methods = Header::from_bytes(&b"Access-Control-Allow-Methods"[..], &b"GET, HEAD, OPTIONS"[..]).unwrap();
@@ -40,12 +43,22 @@ fn start_media_server() -> u16 {
                     return;
                 }
 
-                let url_str = request.url();
-                
+                // Rangeヘッダーの取得
+                let mut range_header_val = None;
+                for header in request.headers() {
+                    if header.field.as_str().as_str().eq_ignore_ascii_case("range") {
+                        range_header_val = Some(header.value.as_str().to_string());
+                        break;
+                    }
+                }
+
+                println!("[MediaServer Request] Method={:?} URL={} Range={:?}", method, url_str, range_header_val);
+
                 // クエリパラメータ ?path= の抽出
                 let path_encoded = match url_str.split("?path=").nth(1) {
                     Some(p) => p,
                     None => {
+                        println!("[MediaServer Error] Missing path in URL: {}", url_str);
                         let _ = request.respond(Response::from_string("Missing path").with_status_code(400));
                         return;
                     }
@@ -54,7 +67,8 @@ fn start_media_server() -> u16 {
                 // URLデコード
                 let file_path_str = match urlencoding::decode(path_encoded) {
                     Ok(p) => p.into_owned(),
-                    Err(_) => {
+                    Err(e) => {
+                        println!("[MediaServer Error] Invalid path encoding: {}", e);
                         let _ = request.respond(Response::from_string("Invalid path encoding").with_status_code(400));
                         return;
                     }
@@ -62,13 +76,15 @@ fn start_media_server() -> u16 {
 
                 let path = Path::new(&file_path_str);
                 if !path.exists() {
+                    println!("[MediaServer Error] File not found: {}", file_path_str);
                     let _ = request.respond(Response::from_string("File not found").with_status_code(404));
                     return;
                 }
 
                 let mut file = match File::open(path) {
                     Ok(f) => f,
-                    Err(_) => {
+                    Err(e) => {
+                        println!("[MediaServer Error] Could not open file: {}", e);
                         let _ = request.respond(Response::from_string("Could not open file").with_status_code(500));
                         return;
                     }
@@ -76,7 +92,8 @@ fn start_media_server() -> u16 {
 
                 let file_size = match file.metadata() {
                     Ok(meta) => meta.len(),
-                    Err(_) => {
+                    Err(e) => {
+                        println!("[MediaServer Error] Could not read file metadata: {}", e);
                         let _ = request.respond(Response::from_string("Could not read file metadata").with_status_code(500));
                         return;
                     }
@@ -95,15 +112,6 @@ fn start_media_server() -> u16 {
                     "video/mp4"
                 };
                 let content_type_header = Header::from_bytes(&b"Content-Type"[..], content_type.as_bytes()).unwrap();
-
-                // Rangeヘッダーの取得
-                let mut range_header_val = None;
-                for header in request.headers() {
-                    if header.field.as_str().as_str().eq_ignore_ascii_case("range") {
-                        range_header_val = Some(header.value.as_str().to_string());
-                        break;
-                    }
-                }
 
                 if let Some(range) = range_header_val {
                     let range_str = range.replace("bytes=", "");
@@ -126,6 +134,7 @@ fn start_media_server() -> u16 {
                     }
 
                     if start >= file_size || end >= file_size || start > end {
+                        println!("[MediaServer Error] Range Not Satisfiable: bytes {}-{}/{}", start, end, file_size);
                         let mut response = Response::from_string("Range Not Satisfiable").with_status_code(416);
                         let content_range = format!("bytes */{}", file_size);
                         let content_range_header = Header::from_bytes(&b"Content-Range"[..], content_range.as_bytes()).unwrap();
@@ -136,13 +145,11 @@ fn start_media_server() -> u16 {
                         return;
                     }
 
-                    // チャンクサイズを最大2MBに制限してソケットのブロッキングと大容量メモリ確保を防止
-                    let max_chunk_size = 2 * 1024 * 1024; // 2MB
-                    let mut chunk_size = end - start + 1;
-                    if chunk_size > max_chunk_size {
-                        end = start + max_chunk_size - 1;
-                        chunk_size = max_chunk_size;
-                    }
+                    let chunk_size = end - start + 1;
+                    println!(
+                        "[MediaServer Response 206] bytes {}-{}/{} (chunk_size={}) type={}",
+                        start, end, file_size, chunk_size, content_type
+                    );
 
                     let accept_ranges_header = Header::from_bytes(&b"Accept-Ranges"[..], &b"bytes"[..]).unwrap();
                     let content_range = format!("bytes {}-{}/{}", start, end, file_size);
@@ -168,21 +175,22 @@ fn start_media_server() -> u16 {
                         );
                         let _ = request.respond(response);
                     } else {
-                        let mut buffer = vec![0; chunk_size as usize];
-                        if file.seek(SeekFrom::Start(start)).is_err() || file.read_exact(&mut buffer).is_err() {
-                            let _ = request.respond(Response::from_string("Read error").with_status_code(500));
+                        if file.seek(SeekFrom::Start(start)).is_err() {
+                            println!("[MediaServer Error] Seek failed to offset {}", start);
+                            let _ = request.respond(Response::from_string("Seek error").with_status_code(500));
                             return;
                         }
                         let response = Response::new(
                             status_code,
                             headers,
-                            std::io::Cursor::new(buffer),
+                            file.take(chunk_size),
                             Some(chunk_size as usize),
                             None,
                         );
                         let _ = request.respond(response);
                     }
                 } else {
+                    println!("[MediaServer Response 200] size={} type={}", file_size, content_type);
                     let headers = vec![
                         cors_header,
                         cors_expose,
@@ -202,19 +210,14 @@ fn start_media_server() -> u16 {
                         );
                         let _ = request.respond(response);
                     } else {
-                        let mut buffer = vec![0; full_size];
-                        if file.read_exact(&mut buffer).is_ok() {
-                            let response = Response::new(
-                                status_code,
-                                headers,
-                                std::io::Cursor::new(buffer),
-                                Some(full_size),
-                                None,
-                            );
-                            let _ = request.respond(response);
-                        } else {
-                            let _ = request.respond(Response::from_string("Read error").with_status_code(500));
-                        }
+                        let response = Response::new(
+                            status_code,
+                            headers,
+                            file,
+                            Some(full_size),
+                            None,
+                        );
+                        let _ = request.respond(response);
                     }
                 }
             });
