@@ -22,7 +22,7 @@ fn start_media_server() -> u16 {
                 let method = request.method();
                 if method == &tiny_http::Method::Options {
                     let cors_origin = Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap();
-                    let cors_methods = Header::from_bytes(&b"Access-Control-Allow-Methods"[..], &b"GET, OPTIONS, POST"[..]).unwrap();
+                    let cors_methods = Header::from_bytes(&b"Access-Control-Allow-Methods"[..], &b"GET, HEAD, OPTIONS"[..]).unwrap();
                     let cors_headers = Header::from_bytes(&b"Access-Control-Allow-Headers"[..], &b"Range, Content-Type"[..]).unwrap();
                     let cors_max_age = Header::from_bytes(&b"Access-Control-Max-Age"[..], &b"86400"[..]).unwrap();
                     
@@ -32,6 +32,11 @@ fn start_media_server() -> u16 {
                     response.add_header(cors_headers);
                     response.add_header(cors_max_age);
                     let _ = request.respond(response);
+                    return;
+                }
+
+                if method != &tiny_http::Method::Get && method != &tiny_http::Method::Head {
+                    let _ = request.respond(Response::from_string("Method Not Allowed").with_status_code(405));
                     return;
                 }
 
@@ -80,7 +85,6 @@ fn start_media_server() -> u16 {
                 // 各種ヘッダー定義
                 let cors_header = Header::from_bytes(&b"Access-Control-Allow-Origin"[..], &b"*"[..]).unwrap();
                 let cors_expose = Header::from_bytes(&b"Access-Control-Expose-Headers"[..], &b"Content-Range, Content-Length, Accept-Ranges"[..]).unwrap();
-                let accept_ranges_header = Header::from_bytes(&b"Accept-Ranges"[..], &b"bytes"[..]).unwrap();
 
                 let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
                 let content_type = if ext == "mov" {
@@ -127,7 +131,7 @@ fn start_media_server() -> u16 {
                         let content_range_header = Header::from_bytes(&b"Content-Range"[..], content_range.as_bytes()).unwrap();
                         response.add_header(content_range_header);
                         response.add_header(cors_header);
-                        response.add_header(cors_expose.clone());
+                        response.add_header(cors_expose);
                         let _ = request.respond(response);
                         return;
                     }
@@ -140,33 +144,77 @@ fn start_media_server() -> u16 {
                         chunk_size = max_chunk_size;
                     }
 
-                    let mut buffer = vec![0; chunk_size as usize];
-                    if file.seek(SeekFrom::Start(start)).is_err() || file.read_exact(&mut buffer).is_err() {
-                        let _ = request.respond(Response::from_string("Read error").with_status_code(500));
-                        return;
-                    }
-
-                    let mut response = Response::from_data(buffer).with_status_code(206);
-                    response.add_header(cors_header);
-                    response.add_header(cors_expose.clone());
-                    response.add_header(accept_ranges_header);
-                    response.add_header(content_type_header);
-                    
+                    let accept_ranges_header = Header::from_bytes(&b"Accept-Ranges"[..], &b"bytes"[..]).unwrap();
                     let content_range = format!("bytes {}-{}/{}", start, end, file_size);
                     let content_range_header = Header::from_bytes(&b"Content-Range"[..], content_range.as_bytes()).unwrap();
-                    response.add_header(content_range_header);
 
-                    let _ = request.respond(response);
-                } else {
-                    let mut buffer = vec![0; file_size as usize];
-                    if file.read_exact(&mut buffer).is_ok() {
-                        let mut response = Response::from_data(buffer).with_status_code(200);
-                        response.add_header(cors_header);
-                        response.add_header(cors_expose.clone());
-                        response.add_header(content_type_header);
+                    let headers = vec![
+                        cors_header,
+                        cors_expose,
+                        accept_ranges_header,
+                        content_type_header,
+                        content_range_header,
+                    ];
+
+                    let status_code = tiny_http::StatusCode(206);
+
+                    if method == &tiny_http::Method::Head {
+                        let response = Response::new(
+                            status_code,
+                            headers,
+                            std::io::empty(),
+                            Some(chunk_size as usize),
+                            None,
+                        );
                         let _ = request.respond(response);
                     } else {
-                        let _ = request.respond(Response::from_string("Read error").with_status_code(500));
+                        let mut buffer = vec![0; chunk_size as usize];
+                        if file.seek(SeekFrom::Start(start)).is_err() || file.read_exact(&mut buffer).is_err() {
+                            let _ = request.respond(Response::from_string("Read error").with_status_code(500));
+                            return;
+                        }
+                        let response = Response::new(
+                            status_code,
+                            headers,
+                            std::io::Cursor::new(buffer),
+                            Some(chunk_size as usize),
+                            None,
+                        );
+                        let _ = request.respond(response);
+                    }
+                } else {
+                    let headers = vec![
+                        cors_header,
+                        cors_expose,
+                        content_type_header,
+                    ];
+
+                    let status_code = tiny_http::StatusCode(200);
+                    let full_size = file_size as usize;
+
+                    if method == &tiny_http::Method::Head {
+                        let response = Response::new(
+                            status_code,
+                            headers,
+                            std::io::empty(),
+                            Some(full_size),
+                            None,
+                        );
+                        let _ = request.respond(response);
+                    } else {
+                        let mut buffer = vec![0; full_size];
+                        if file.read_exact(&mut buffer).is_ok() {
+                            let response = Response::new(
+                                status_code,
+                                headers,
+                                std::io::Cursor::new(buffer),
+                                Some(full_size),
+                                None,
+                            );
+                            let _ = request.respond(response);
+                        } else {
+                            let _ = request.respond(Response::from_string("Read error").with_status_code(500));
+                        }
                     }
                 }
             });
