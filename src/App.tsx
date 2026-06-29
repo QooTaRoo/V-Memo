@@ -164,6 +164,32 @@ function App(): React.JSX.Element {
         // 状態を綺麗に再計算して適用 (データの整合性担保)
         data.events = recalculateEventStates(data.events, data.matchSettings)
         setProjectData(data)
+
+        // イン点・アウト点の復元
+        if (data.inPoint !== undefined) {
+          setInPoint(data.inPoint)
+        } else {
+          setInPoint(null)
+        }
+        if (data.outPoint !== undefined) {
+          setOutPoint(data.outPoint)
+        } else {
+          setOutPoint(null)
+        }
+
+        // エクスポート設定の復元
+        if (data.exportSettings) {
+          const settings = data.exportSettings
+          if (settings.resolution !== undefined) setExportResolution(settings.resolution)
+          if (settings.fade !== undefined) setExportFade(settings.fade)
+          if (settings.showTitle !== undefined) setExportTitle(settings.showTitle)
+          if (settings.eventName !== undefined) setExportEventName(settings.eventName)
+          if (settings.matchCard !== undefined) setExportMatchCard(settings.matchCard)
+          if (settings.datePlace !== undefined) setExportDatePlace(settings.datePlace)
+          if (settings.titleDuration !== undefined) setExportTitleDuration(settings.titleDuration)
+          if (settings.exportType !== undefined) setExportType(settings.exportType as any)
+          if (settings.rangeMode !== undefined) setExportRangeMode(settings.rangeMode as any)
+        }
         
         const index = findActiveEventIndex(data.events, currentTime)
         setActiveEventIndex(index)
@@ -208,10 +234,23 @@ function App(): React.JSX.Element {
         targetPath = selected
       }
 
-      // 保存するデータ構造を整理 (現在の動画絶対パスを格納)
+      // 保存するデータ構造を整理 (現在の動画絶対パス、イン点/アウト点、エクスポート設定を格納)
       const dataToSave: ProjectData = {
         ...projectData,
-        videoPath: videoPath
+        videoPath: videoPath,
+        inPoint: inPoint,
+        outPoint: outPoint,
+        exportSettings: {
+          resolution: exportResolution,
+          fade: exportFade,
+          showTitle: exportTitle,
+          eventName: exportEventName,
+          matchCard: exportMatchCard,
+          datePlace: exportDatePlace,
+          titleDuration: exportTitleDuration,
+          exportType: exportType,
+          rangeMode: exportRangeMode
+        }
       }
 
       await invoke('save_project_json', {

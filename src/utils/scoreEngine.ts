@@ -47,6 +47,19 @@ export interface ProjectData {
   events: ScoreEvent[];
   videoPath?: string | null;
   exportRanges?: ExportRange[];
+  inPoint?: number | null;
+  outPoint?: number | null;
+  exportSettings?: {
+    resolution?: string;
+    fade?: boolean;
+    showTitle?: boolean;
+    eventName?: string;
+    matchCard?: string;
+    datePlace?: string;
+    titleDuration?: number | '';
+    exportType?: 'normal' | 'transparent';
+    rangeMode?: 'all' | 'inout';
+  };
 }
 
 export const INITIAL_STATE: EventState = {
