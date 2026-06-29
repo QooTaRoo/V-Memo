@@ -93,6 +93,7 @@ function App(): React.JSX.Element {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const isSeeking = useRef<boolean>(false)
   const lastInputTimeRef = useRef<number>(0) // 競合防止ロック用
+  const isComposingRef = useRef<boolean>(false) // IME変換中フラグ
 
   const syncVideoDomState = (): void => {
     // デバッグ情報削除に伴い空処理化
@@ -1661,9 +1662,11 @@ function App(): React.JSX.Element {
                     type="text"
                     value={newPresetName}
                     onChange={(e) => setNewPresetName(e.target.value)}
+                    onCompositionStart={() => { isComposingRef.current = true }}
+                    onCompositionEnd={() => { isComposingRef.current = false }}
                     onKeyDown={(e) => {
-                      // isComposing=true の間は IME変換中なので無視
-                      if (e.key === 'Enter' && !e.nativeEvent.isComposing && newPresetName.trim()) {
+                      // IME変換中のEnterは無視 (isComposingRefで確実に判定)
+                      if (e.key === 'Enter' && !isComposingRef.current && newPresetName.trim()) {
                         addNewPreset(newPresetName.trim())
                         setNewPresetName('')
                       }
