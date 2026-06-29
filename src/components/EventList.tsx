@@ -72,7 +72,7 @@ export const EventList: React.FC<EventListProps> = ({
               >
                 {/* 1行目: 時間 と 得点タグ/ゴミ箱 */}
                 <div className="event-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <span className="event-time" style={{ fontFamily: 'monospace', fontWeight: 'bold', color: '#00e5ff' }}>{formatTime(event.timestamp)}</span>
                     <span className={`event-tag tag-${type}`} style={{
                       padding: '2px 6px',
@@ -84,6 +84,19 @@ export const EventList: React.FC<EventListProps> = ({
                     }}>
                       {type === 'point' ? '得点' : type === 'serve_change' ? 'サーブ' : type === 'set_confirm' ? '確定' : type === 'overlay_toggle' ? '表示設定' : 'その他'}
                     </span>
+                    {state.setWinner && (
+                      <span className="set-winner-tag" style={{
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '10px',
+                        fontWeight: 'bold',
+                        backgroundColor: state.setWinner === 'A' ? 'rgba(0, 229, 255, 0.15)' : 'rgba(255, 59, 48, 0.15)',
+                        color: state.setWinner === 'A' ? '#00e5ff' : '#ff3b30',
+                        border: state.setWinner === 'A' ? '1px solid rgba(0, 229, 255, 0.3)' : '1px solid rgba(255, 59, 48, 0.3)'
+                      }}>
+                        セット獲得: {state.setWinner === 'A' ? teamAName || 'A' : teamBName || 'B'}
+                      </span>
+                    )}
                   </div>
                   {event.id !== 'init_serve' && (
                     <button
@@ -139,20 +152,7 @@ export const EventList: React.FC<EventListProps> = ({
                       <span style={{ color: 'rgba(255,255,255,0.4)', margin: '0 2px' }}>)</span>
                       <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>{teamBName || 'チームB'}</span>
 
-                      {/* セット獲得バッジがある場合 */}
-                      {state.setWinner && (
-                        <span style={{
-                          marginLeft: 'auto',
-                          fontSize: '10px',
-                          backgroundColor: state.setWinner === 'A' ? 'rgba(0, 229, 255, 0.2)' : 'rgba(255, 59, 48, 0.2)',
-                          color: state.setWinner === 'A' ? '#00e5ff' : '#ff3b30',
-                          padding: '1px 4px',
-                          borderRadius: '3px',
-                          fontWeight: 'bold'
-                        }}>
-                          セット獲得: {state.setWinner === 'A' ? 'A' : 'B'}
-                        </span>
-                      )}
+
                     </div>
                   ) : (
                     /* 得点イベント以外 (サーブ権やリセット等) */
