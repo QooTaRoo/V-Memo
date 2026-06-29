@@ -76,6 +76,8 @@ function App(): React.JSX.Element {
   const [exportProgress, setExportProgress] = useState<number>(0)
   const [isExporting, setIsExporting] = useState<boolean>(false)
   const [exportStatusText, setExportStatusText] = useState<string>('')
+  const [exportRangeMode, setExportRangeMode] = useState<'all' | 'inout'>('all')
+  const [exportType, setExportType] = useState<'normal' | 'transparent'>('normal')
   const [mediaPort, setMediaPort] = useState<number | null>(null)
 
   // 試合設定数値入力の一時ローカル状態 (空文字入力を許容するため)
@@ -594,6 +596,19 @@ function App(): React.JSX.Element {
     fetchPort()
   }, [])
 
+  // モーダルが開かれた時の初期範囲モード自動決定
+  useEffect(() => {
+    if (isExportModalOpen) {
+      if (inPoint !== null || outPoint !== null) {
+        setExportRangeMode('inout')
+      } else {
+        setExportRangeMode('all')
+      }
+      // モードは常に通常エクスポートをデフォルトに
+      setExportType('normal')
+    }
+  }, [isExportModalOpen, inPoint, outPoint])
+
   // エクスポートリスナー
   useEffect(() => {
     let unlistenComplete: any
@@ -624,12 +639,13 @@ function App(): React.JSX.Element {
 
     try {
       // 保存先ファイルの選択
+      const isTransparent = exportType === 'transparent'
       const outputVideoPath = await save({
-        title: 'エクスポート動画の保存先',
-        defaultPath: `${videoName.replace(/\.[^/.]+$/, '')}_fixed.mp4`,
+        title: isTransparent ? '得点板（透過）動画の保存先' : 'エクスポート動画の保存先',
+        defaultPath: `${videoName.replace(/\.[^/.]+$/, '')}_fixed.${isTransparent ? 'mov' : 'mp4'}`,
         filters: [{
-          name: 'MP4 Video',
-          extensions: ['mp4']
+          name: isTransparent ? 'MOV Video (ProRes 4444)' : 'MP4 Video',
+          extensions: [isTransparent ? 'mov' : 'mp4']
         }]
       })
 
@@ -647,8 +663,8 @@ function App(): React.JSX.Element {
 
       setExportStatusText('オーバーレイ映像を生成中...')
       
-      const inPt = inPoint !== null ? inPoint : 0
-      const outPt = outPoint !== null ? outPoint : duration
+      const inPt = exportRangeMode === 'all' ? 0 : (inPoint !== null ? inPoint : 0)
+      const outPt = exportRangeMode === 'all' ? duration : (outPoint !== null ? outPoint : duration)
 
       // 得点板透明WebMを一時フォルダにエクスポート
       const { path: tempWebmPath, useColorkey } = await exportTransparentWebm(
@@ -670,7 +686,7 @@ function App(): React.JSX.Element {
         }
       )
 
-      setExportStatusText('FFmpegで元動画と合成中...')
+      setExportStatusText(isTransparent ? 'FFmpegで透過動画に変換中...' : 'FFmpegで元動画と合成中...')
       
       // Tauri側の export_video を呼び出す
       await invoke('export_video', {
@@ -678,7 +694,7 @@ function App(): React.JSX.Element {
           inputVideoPath: videoPath,
           overlayVideoPath: tempWebmPath,
           outputVideoPath: outputVideoPath,
-          exportType: 'normal',
+          exportType: exportType,
           inPoint: inPt,
           outPoint: outPt,
           resolution: exportResolution,
@@ -1472,18 +1488,76 @@ function App(): React.JSX.Element {
                 {/* 1. 書き出し範囲情報 */}
                 <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
                   <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>1. 書き出し範囲</h4>
-                  <p style={{ margin: 0, fontSize: '14px' }}>
-                    {inPoint !== null ? `イン点: ${formatTime(inPoint)}` : '開始: 00:00.00'} 〜{' '}
-                    {outPoint !== null ? `アウト点: ${formatTime(outPoint)}` : `終了: ${formatTime(duration)}`}
+                  <div style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                      <input 
+                        type="radio" 
+                        name="exportRangeMode" 
+                        value="all" 
+                        checked={exportRangeMode === 'all'} 
+                        onChange={() => setExportRangeMode('all')} 
+                      />
+                      動画全体 (全範囲)
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', opacity: (inPoint === null && outPoint === null) ? 0.5 : 1 }}>
+                      <input 
+                        type="radio" 
+                        name="exportRangeMode" 
+                        value="inout" 
+                        disabled={inPoint === null && outPoint === null}
+                        checked={exportRangeMode === 'inout'} 
+                        onChange={() => setExportRangeMode('inout')} 
+                      />
+                      指定範囲 (イン点・アウト点)
+                    </label>
+                  </div>
+                  
+                  <p style={{ margin: '8px 0 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+                    {exportRangeMode === 'all' ? (
+                      `範囲: 開始 00:00.00 〜 終了 ${formatTime(duration)} (全体)`
+                    ) : (
+                      `範囲: ${inPoint !== null ? formatTime(inPoint) : '00:00.00'} 〜 ${outPoint !== null ? formatTime(outPoint) : formatTime(duration)}`
+                    )}
                   </p>
                   <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#00e5ff' }}>
-                    総書き出し時間: {formatTime((outPoint !== null ? outPoint : duration) - (inPoint !== null ? inPoint : 0))}
+                    総書き出し時間: {formatTime(
+                      exportRangeMode === 'all' 
+                        ? duration 
+                        : (outPoint !== null ? outPoint : duration) - (inPoint !== null ? inPoint : 0)
+                    )}
                   </p>
                 </div>
 
-                {/* 2. 出力設定 */}
+                {/* 2. 出力モードの選択 */}
+                <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>2. 出力モード</h4>
+                  <div style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                      <input 
+                        type="radio" 
+                        name="exportType" 
+                        value="normal" 
+                        checked={exportType === 'normal'} 
+                        onChange={() => setExportType('normal')} 
+                      />
+                      元動画と合成して出力 (通常のMP4)
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                      <input 
+                        type="radio" 
+                        name="exportType" 
+                        value="transparent" 
+                        checked={exportType === 'transparent'} 
+                        onChange={() => setExportType('transparent')} 
+                      />
+                      得点板のみ出力 (透過MOV/他編集ソフト用)
+                    </label>
+                  </div>
+                </div>
+
+                {/* 3. 出力設定 */}
                 <div style={{ marginBottom: '16px' }}>
-                  <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>2. 出力解像度・エフェクト</h4>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>3. 出力解像度・エフェクト</h4>
                   <div style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <label style={{ fontSize: '12px' }}>解像度</label>
@@ -1511,21 +1585,22 @@ function App(): React.JSX.Element {
                   </div>
                 </div>
 
-                {/* 3. タイトルカード設定 */}
-                <div style={{ marginBottom: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                    <h4 style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>3. 開始前の試合情報タイトル表示 (黒背景)</h4>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
-                      <input 
-                        type="checkbox" 
-                        checked={exportTitle} 
-                        onChange={(e) => setExportTitle(e.target.checked)} 
-                      />
-                      有効化
-                    </label>
-                  </div>
+                {/* 4. タイトルカード設定 (透過出力時は非表示) */}
+                {exportType === 'normal' && (
+                  <div style={{ marginBottom: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <h4 style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>4. 開始前の試合情報タイトル表示 (黒背景)</h4>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={exportTitle} 
+                          onChange={(e) => setExportTitle(e.target.checked)} 
+                        />
+                        有効化
+                      </label>
+                    </div>
 
-                  {exportTitle && (
+                    {exportTitle && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '6px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>大会/イベント名</label>
@@ -1582,6 +1657,7 @@ function App(): React.JSX.Element {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* ボタンアクション */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
