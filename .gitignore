@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Sample data and media files
+sampledata/
+/volleyball_icon_*.jpg
+/volleyball_icon_*.png

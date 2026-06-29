@@ -1,5 +1,5 @@
 {
-  "name": "tauri-app",
+  "name": "v-memo",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -15,7 +15,8 @@
     "@tauri-apps/plugin-fs": "^2.5.1",
     "@tauri-apps/plugin-opener": "^2",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "webm-muxer": "^5.1.4"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",

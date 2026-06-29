@@ -342,7 +342,8 @@ html, body {
   -webkit-appearance: none;
   background: transparent;
   margin: 0;
-  z-index: 5;
+  position: relative;
+  z-index: 1;
   cursor: pointer;
 }
 
@@ -371,6 +372,7 @@ html, body {
   margin-top: -4px;
   box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
   transition: transform 0.1s ease;
+  z-index: 3; /* thumb is always on top */
 }
 
 .seekbar-input:hover::-webkit-slider-thumb {
@@ -381,26 +383,28 @@ html, body {
   position: absolute;
   left: 0;
   right: 0;
-  height: 6px;
+  height: 8px;
   pointer-events: none;
-  z-index: 4;
+  z-index: 2;
   margin: 0 7px;
+  display: flex;
+  align-items: center;
 }
 
 .timeline-marker {
   position: absolute;
-  top: 0;
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   transform: translateX(-50%);
+  border: 1.5px solid #0e0e12; /* 黒いフチを付けて可視性向上 */
   pointer-events: auto;
   cursor: pointer;
   transition: transform 0.2s ease;
 }
 
 .timeline-marker:hover {
-  transform: translateX(-50%) scale(1.8);
+  transform: translateX(-50%) scale(1.6);
   z-index: 10;
 }
 
@@ -417,8 +421,8 @@ html, body {
 .marker-set_confirm {
   background-color: #ff9100;
   box-shadow: 0 0 6px #ff9100;
-  height: 8px; /* セット獲得は少し大きめに */
-  width: 8px;
+  height: 10px; /* セット獲得は少し大きめに */
+  width: 10px;
 }
 
 /* コントロール群 */
@@ -459,12 +463,16 @@ html, body {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
-  padding: 6px 16px;
-  border-radius: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-play-pause:hover:not(:disabled) {
@@ -476,6 +484,35 @@ html, body {
   opacity: 0.3;
   cursor: not-allowed;
 }
+
+.btn-control-skip {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  min-width: 32px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'SF Mono', Consolas, monospace;
+}
+
+.btn-control-skip:hover:not(:disabled) {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-control-skip:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 
 .time-display {
   font-family: 'SF Mono', Consolas, monospace;
@@ -574,3 +611,606 @@ html, body {
   word-break: break-all;
   line-height: 1.4;
 }
+
+/* エクスポート進捗ダイアログ用スピナーアニメーション */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ----------------------------------------------------
+   追加: 2段プレイヤーコントロール & 切り出し範囲設定
+   ---------------------------------------------------- */
+.player-controls-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 1行目: 切り出し範囲設定バー */
+.time-range-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.range-controls-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-range-set {
+  background-color: rgba(0, 229, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  color: #00e5ff;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-range-set:hover:not(:disabled) {
+  background-color: rgba(0, 229, 255, 0.2);
+  border-color: rgba(0, 229, 255, 0.4);
+}
+
+.btn-range-set:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-range-jump {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-range-jump:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.btn-range-jump:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* 終了位置設定ボタンの色調整 */
+.btn-out-point {
+  background-color: rgba(255, 145, 0, 0.1);
+  border-color: rgba(255, 145, 0, 0.25);
+  color: #ff9100;
+}
+
+.btn-out-point:hover:not(:disabled) {
+  background-color: rgba(255, 145, 0, 0.2);
+  border-color: rgba(255, 145, 0, 0.4);
+}
+
+.range-info {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.time-highlight {
+  color: #fff;
+  font-family: 'SF Mono', Consolas, monospace;
+  font-weight: bold;
+}
+
+.duration-highlight {
+  color: #00ff66;
+  font-family: 'SF Mono', Consolas, monospace;
+  font-weight: bold;
+}
+
+/* スキップボタン群 */
+.skip-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-control-skip {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  min-width: 36px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'SF Mono', Consolas, monospace;
+}
+
+.btn-control-skip:hover:not(:disabled) {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-control-skip:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ----------------------------------------------------
+   追加: サイドバー切り出し範囲（セット等）管理
+   ---------------------------------------------------- */
+.btn-export-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #00e5ff, #00b0ff);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.btn-export-trigger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
+}
+
+.export-ranges-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.export-ranges-controls {
+  width: 100%;
+}
+
+.btn-add-range {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  color: #fff;
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-add-range:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-add-range:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.export-ranges-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.export-ranges-list::-webkit-scrollbar {
+  width: 3px;
+}
+.export-ranges-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 1.5px;
+}
+
+.export-range-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 8px 10px;
+  gap: 8px;
+}
+
+.range-item-info {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.range-item-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.range-item-times {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: 'SF Mono', Consolas, monospace;
+  margin-top: 2px;
+}
+
+.range-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-range-apply {
+  background-color: #00e5ff;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-range-apply:hover {
+  background-color: #00b2c7;
+}
+
+.btn-range-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-range-delete:hover {
+  background-color: rgba(255, 0, 0, 0.15);
+}
+
+.no-ranges-placeholder {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+  padding: 16px 0;
+  font-style: italic;
+}
+
+/* ----------------------------------------------------
+   追加: エクスポート設定・進捗モーダル
+   ---------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content.export-modal {
+  background-color: #121216;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  width: 580px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.modal-content.export-modal::-webkit-scrollbar {
+  width: 4px;
+}
+.modal-content.export-modal::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+.modal-content.export-modal h2 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+}
+
+/* モーダル進捗画面 */
+.export-progress-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 229, 255, 0.1);
+  border-top-color: #00e5ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+.progress-status-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.progress-bar-wrapper {
+  width: 80%;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00e5ff, #00ff66);
+  width: 0%;
+  transition: width 0.2s ease-out;
+}
+
+.progress-percentage {
+  font-size: 18px;
+  font-weight: 700;
+  color: #00e5ff;
+  font-family: 'SF Mono', Consolas, monospace;
+}
+
+.progress-tip {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 24px;
+}
+
+/* 設定フォーム */
+.export-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.settings-section {
+  background-color: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.settings-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.radio-group input[type="radio"] {
+  accent-color: #00e5ff;
+  width: 16px;
+  height: 16px;
+}
+
+.options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.option-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.option-item label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.option-item select {
+  background-color: #1a1a22;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #fff;
+  padding: 8px 12px;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+
+.option-item select:focus {
+  border-color: #00e5ff;
+}
+
+.checkbox-item label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.checkbox-item input[type="checkbox"] {
+  accent-color: #00e5ff;
+  width: 16px;
+  height: 16px;
+}
+
+/* タイトル合成オプション */
+.title-synthesis-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+  padding-bottom: 10px;
+}
+
+.section-header-row h3 {
+  margin: 0;
+}
+
+.section-header-row input[type="checkbox"] {
+  display: none;
+}
+
+.label-toggle {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.section-header-row input[type="checkbox"]:checked + .label-toggle {
+  background-color: rgba(0, 229, 255, 0.15);
+  border-color: rgba(0, 229, 255, 0.4);
+  color: #00e5ff;
+}
+
+.title-options-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.title-options-form .form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.title-options-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.title-options-form .form-group.duration-group {
+  flex: 0 0 100px;
+}
+
+.title-options-form .form-group label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.title-options-form .form-group input {
+  background-color: #1a1a22;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #fff;
+  padding: 8px 12px;
+  font-size: 13px;
+  outline: none;
+}
+
+.title-options-form .form-group input:focus {
+  border-color: #00e5ff;
+}
+
+/* アクションボタン */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 16px;
+  margin-top: 10px;
+}
+
+.btn-cancel {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.btn-export-start {
+  padding: 10px 24px;
+}
+

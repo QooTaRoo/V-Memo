@@ -13,7 +13,7 @@ export const ScoreboardOverlay: React.FC<ScoreboardOverlayProps> = ({ state, set
 
   const positionClass = `overlay-pos-${overlayPosition}`
   const scaleStyle = {
-    transform: `scale(${overlaySize / 100})`,
+    transform: `scale(${overlaySize / 200})`, // 50% of the original size becomes the new 100%
     transformOrigin: overlayPosition.replace('-', ' ')
   }
 

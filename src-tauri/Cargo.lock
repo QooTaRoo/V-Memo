@@ -3360,21 +3360,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tauri-app"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-fs",
- "tauri-plugin-opener",
- "tiny_http",
- "urlencoding",
-]
-
-[[package]]
 name = "tauri-build"
 version = "2.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4127,6 +4112,21 @@ dependencies = [
  "js-sys",
  "serde_core",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "v-memo"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-fs",
+ "tauri-plugin-opener",
+ "tiny_http",
+ "urlencoding",
 ]
 
 [[package]]

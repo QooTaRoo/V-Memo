@@ -13,7 +13,9 @@ import {
   MatchSettings
 } from './utils/scoreEngine'
 import { open, save } from '@tauri-apps/plugin-dialog'
-import { invoke, convertFileSrc } from '@tauri-apps/api/core'
+import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
+import { exportTransparentWebm } from './utils/videoExporter'
 import './App.css'
 
 // デフォルトの新規プロジェクトテンプレート
@@ -58,10 +60,29 @@ function App(): React.JSX.Element {
   const [activeEventIndex, setActiveEventIndex] = useState<number>(-1)
   const [activeState, setActiveState] = useState<EventState>(INITIAL_STATE)
 
-  // メディアデバッグ用ステート
-  const [videoDomMuted, setVideoDomMuted] = useState<boolean>(false)
-  const [videoDomVolume, setVideoDomVolume] = useState<number>(1)
-  const [videoErrorMsg, setVideoErrorMsg] = useState<string>('None')
+  // スキップ秒数 & イン点・アウト点状態
+  const [skipSeconds, setSkipSeconds] = useState<number | ''>(10)
+  const [inPoint, setInPoint] = useState<number | null>(null)
+  const [outPoint, setOutPoint] = useState<number | null>(null)
+
+  // エクスポートモーダルの状態
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false)
+  const [exportResolution, setExportResolution] = useState<string>('original')
+  const [exportFade, setExportFade] = useState<boolean>(true)
+  const [exportTitle, setExportTitle] = useState<boolean>(false)
+  const [exportEventName, setExportEventName] = useState<string>('令和8年度 関東高等学校バレーボール大会')
+  const [exportMatchCard, setExportMatchCard] = useState<string>('男子決勝 大宮東 VS 伊奈学園 (第1セット)')
+  const [exportDatePlace, setExportDatePlace] = useState<string>('2026年6月26日 / さいたまスーパーアリーナ')
+  const [exportTitleDuration, setExportTitleDuration] = useState<number | ''>(5)
+  const [exportProgress, setExportProgress] = useState<number>(0)
+  const [isExporting, setIsExporting] = useState<boolean>(false)
+  const [exportStatusText, setExportStatusText] = useState<string>('')
+  const [mediaPort, setMediaPort] = useState<number | null>(null)
+
+  // 試合設定数値入力の一時ローカル状態 (空文字入力を許容するため)
+  const [inputNormalPoints, setInputNormalPoints] = useState<string>('25')
+  const [inputFinalPoints, setInputFinalPoints] = useState<string>('15')
+  const [inputOverlaySize, setInputOverlaySize] = useState<string>('100')
 
   // 参照 (Ref) 管理
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -69,36 +90,7 @@ function App(): React.JSX.Element {
   const lastInputTimeRef = useRef<number>(0) // 競合防止ロック用
 
   const syncVideoDomState = (): void => {
-    if (videoRef.current) {
-      setVideoDomMuted(videoRef.current.muted)
-      setVideoDomVolume(videoRef.current.volume)
-      if (videoRef.current.error) {
-        setVideoErrorMsg(`Code ${videoRef.current.error.code}: ${videoRef.current.error.message}`)
-      } else {
-        setVideoErrorMsg('None')
-      }
-    }
-  }
-
-  const playTestTone = (): void => {
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
-      osc.connect(gain)
-      gain.connect(ctx.destination)
-      
-      osc.type = 'sine'
-      osc.frequency.value = 440 // A4 tone
-      gain.gain.setValueAtTime(0.15, ctx.currentTime) // gentle volume
-      
-      osc.start()
-      osc.stop(ctx.currentTime + 0.3)
-      console.log('Speaker test tone played successfully')
-    } catch (e: any) {
-      console.error('Failed to play test tone:', e)
-      alert('テスト音の再生に失敗しました: ' + e.message)
-    }
+    // デバッグ情報削除に伴い空処理化
   }
 
 
@@ -127,6 +119,8 @@ function App(): React.JSX.Element {
         setVideoName(name)
         setIsPlaying(false)
         setCurrentTime(0)
+        setInPoint(null)
+        setOutPoint(null)
 
         // プロジェクトがない場合はデフォルト新規プロジェクトを自動生成
         if (!projectData) {
@@ -574,8 +568,141 @@ function App(): React.JSX.Element {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isPlaying, duration])
 
-  // TauriアセットプロトコルURIの生成
-  const videoSrc = videoPath ? convertFileSrc(videoPath) : ''
+  // 試合設定数値入力の同期用
+  useEffect(() => {
+    if (projectData) {
+      setInputNormalPoints(String(projectData.matchSettings.normalSetPoints))
+      setInputFinalPoints(String(projectData.matchSettings.finalSetPoints))
+      setInputOverlaySize(String(projectData.matchSettings.overlaySize))
+    }
+  }, [
+    projectData?.matchSettings.normalSetPoints,
+    projectData?.matchSettings.finalSetPoints,
+    projectData?.matchSettings.overlaySize
+  ])
+
+  // アプリ起動時にメディアサーバーのポートを取得する
+  useEffect(() => {
+    const fetchPort = async () => {
+      try {
+        const port = await invoke<number>('get_media_port')
+        setMediaPort(port)
+        console.log('[App] Loaded media server port:', port)
+      } catch (err) {
+        console.error('Failed to load media server port:', err)
+      }
+    }
+    fetchPort()
+  }, [])
+
+  // エクスポートリスナー
+  useEffect(() => {
+    let unlistenComplete: any
+    let unlistenError: any
+    const setupListeners = async () => {
+      unlistenComplete = await listen('export-complete', () => {
+        setIsExporting(false)
+        setExportStatusText('完了！')
+        alert('動画のエクスポートが完了しました！')
+        setIsExportModalOpen(false)
+      })
+      unlistenError = await listen('export-error', (event: any) => {
+        setIsExporting(false)
+        setExportStatusText('エラー発生')
+        alert(`エクスポートに失敗しました:\n${event.payload}`)
+      })
+    }
+    setupListeners()
+    return () => {
+      if (unlistenComplete) unlistenComplete()
+      if (unlistenError) unlistenError()
+    }
+  }, [])
+
+  // エクスポート実行
+  const handleExport = async (): Promise<void> => {
+    if (!videoPath || !projectData) return
+
+    try {
+      // 保存先ファイルの選択
+      const outputVideoPath = await save({
+        title: 'エクスポート動画の保存先',
+        defaultPath: `${videoName.replace(/\.[^/.]+$/, '')}_fixed.mp4`,
+        filters: [{
+          name: 'MP4 Video',
+          extensions: ['mp4']
+        }]
+      })
+
+      if (!outputVideoPath || typeof outputVideoPath !== 'string') {
+        return
+      }
+
+      setIsExporting(true)
+      setExportProgress(0)
+      setExportStatusText('メタデータ取得中...')
+
+      // ビデオメタデータの取得
+      const metadata = await invoke<any>('get_video_metadata', { path: videoPath })
+      console.log('[Export] Loaded video metadata for FFmpeg:', metadata)
+
+      setExportStatusText('オーバーレイ映像を生成中...')
+      
+      const inPt = inPoint !== null ? inPoint : 0
+      const outPt = outPoint !== null ? outPoint : duration
+
+      // 得点板透明WebMを一時フォルダにエクスポート
+      const { path: tempWebmPath, useColorkey } = await exportTransparentWebm(
+        metadata,
+        projectData.events,
+        scoreboardSettings,
+        inPt,
+        outPt,
+        {
+          showTitle: exportTitle,
+          eventName: exportEventName,
+          matchCard: exportMatchCard,
+          datePlace: exportDatePlace,
+          duration: typeof exportTitleDuration === 'number' ? exportTitleDuration : 5
+        },
+        (pct) => {
+          setExportProgress(pct)
+          setExportStatusText(`オーバーレイ映像を生成中... ${pct}%`)
+        }
+      )
+
+      setExportStatusText('FFmpegで元動画と合成中...')
+      
+      // Tauri側の export_video を呼び出す
+      await invoke('export_video', {
+        args: {
+          inputVideoPath: videoPath,
+          overlayVideoPath: tempWebmPath,
+          outputVideoPath: outputVideoPath,
+          exportType: 'normal',
+          inPoint: inPt,
+          outPoint: outPt,
+          resolution: exportResolution,
+          fade: exportFade,
+          totalDuration: duration,
+          fps: metadata.fps,
+          useColorkey: useColorkey
+        }
+      })
+
+      setExportStatusText('合成処理を開始しました。完了をお待ちください...')
+    } catch (e: any) {
+      console.error('[Export] Error during export process:', e)
+      setIsExporting(false)
+      setExportStatusText('失敗しました')
+      alert('エクスポートに失敗しました:\n' + e.message)
+    }
+  }
+
+  // ローカルメディアサーバーのURL生成 (Tauriのアセットプロトコルでの音声再生バグ回避のため)
+  const videoSrc = (videoPath && mediaPort)
+    ? `http://127.0.0.1:${mediaPort}/video?path=${encodeURIComponent(videoPath)}`
+    : ''
 
   const scoreboardSettings = projectData?.matchSettings || createDefaultProject().matchSettings
 
@@ -610,13 +737,38 @@ function App(): React.JSX.Element {
           </div>
 
           {projectData && (
-            <div className="save-buttons-row">
-              <button className="btn-save" onClick={() => handleSaveProject(false)}>
-                💾 上書き保存
-              </button>
-              <button className="btn-save btn-secondary" onClick={() => handleSaveProject(true)}>
-                別名保存...
-              </button>
+            <div className="save-buttons-row" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn-save" style={{ flex: 1 }} onClick={() => handleSaveProject(false)}>
+                  💾 上書き保存
+                </button>
+                <button className="btn-save btn-secondary" style={{ flex: 1 }} onClick={() => handleSaveProject(true)}>
+                  別名保存...
+                </button>
+              </div>
+              {videoPath && (
+                <button 
+                  className="btn-export-trigger" 
+                  onClick={() => setIsExportModalOpen(true)}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    backgroundColor: '#00e5ff',
+                    color: '#08080a',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  🎬 動画をエクスポート...
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -661,8 +813,16 @@ function App(): React.JSX.Element {
                 <input
                   type="number"
                   min={1}
-                  value={scoreboardSettings.normalSetPoints}
-                  onChange={(e) => handleSettingChange('normalSetPoints', parseInt(e.target.value) || 25)}
+                  value={inputNormalPoints}
+                  onChange={(e) => setInputNormalPoints(e.target.value)}
+                  onBlur={() => {
+                    const val = parseInt(inputNormalPoints);
+                    if (!isNaN(val) && val >= 1) {
+                      handleSettingChange('normalSetPoints', val);
+                    } else {
+                      setInputNormalPoints(String(scoreboardSettings.normalSetPoints));
+                    }
+                  }}
                 />
               </div>
 
@@ -671,8 +831,16 @@ function App(): React.JSX.Element {
                 <input
                   type="number"
                   min={1}
-                  value={scoreboardSettings.finalSetPoints}
-                  onChange={(e) => handleSettingChange('finalSetPoints', parseInt(e.target.value) || 15)}
+                  value={inputFinalPoints}
+                  onChange={(e) => setInputFinalPoints(e.target.value)}
+                  onBlur={() => {
+                    const val = parseInt(inputFinalPoints);
+                    if (!isNaN(val) && val >= 1) {
+                      handleSettingChange('finalSetPoints', val);
+                    } else {
+                      setInputFinalPoints(String(scoreboardSettings.finalSetPoints));
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -701,10 +869,18 @@ function App(): React.JSX.Element {
                 <label>サイズ (%)</label>
                 <input
                   type="number"
-                  min={40}
-                  max={150}
-                  value={scoreboardSettings.overlaySize}
-                  onChange={(e) => handleSettingChange('overlaySize', parseInt(e.target.value) || 100)}
+                  min={10}
+                  max={300}
+                  value={inputOverlaySize}
+                  onChange={(e) => setInputOverlaySize(e.target.value)}
+                  onBlur={() => {
+                    const val = parseInt(inputOverlaySize);
+                    if (!isNaN(val) && val >= 10 && val <= 300) {
+                      handleSettingChange('overlaySize', val);
+                    } else {
+                      setInputOverlaySize(String(scoreboardSettings.overlaySize));
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -733,7 +909,7 @@ function App(): React.JSX.Element {
                 onError={(e) => {
                   const err = (e.target as HTMLVideoElement).error;
                   if (err) {
-                    setVideoErrorMsg(`Code ${err.code}: ${err.message}`);
+                    console.error(`Video Error: Code ${err.code}: ${err.message}`);
                   }
                 }}
                 onClick={togglePlay}
@@ -785,23 +961,172 @@ function App(): React.JSX.Element {
                 })}
               </div>
             )}
+            {/* イン点・アウト点の範囲表示 */}
+            {videoPath && duration > 0 && inPoint !== null && (
+              <div 
+                className="in-out-range-highlight"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  height: '100%',
+                  left: `${(inPoint / duration) * 100}%`,
+                  width: `${(( (outPoint !== null ? outPoint : duration) - inPoint) / duration) * 100}%`,
+                  backgroundColor: 'rgba(0, 229, 255, 0.18)',
+                  pointerEvents: 'none',
+                  borderRadius: '3px',
+                  zIndex: 1
+                }}
+              />
+            )}
+            {/* イン点マーカー (水色の縦線) */}
+            {videoPath && duration > 0 && inPoint !== null && (
+              <div 
+                className="in-point-line-marker"
+                style={{
+                  position: 'absolute',
+                  left: `${(inPoint / duration) * 100}%`,
+                  top: '-4px',
+                  width: '2px',
+                  height: 'calc(100% + 8px)',
+                  backgroundColor: '#00e5ff',
+                  pointerEvents: 'none',
+                  zIndex: 2,
+                  boxShadow: '0 0 6px rgba(0, 229, 255, 0.8)'
+                }}
+              />
+            )}
+            {/* アウト点マーカー (赤色の縦線) */}
+            {videoPath && duration > 0 && outPoint !== null && (
+              <div 
+                className="out-point-line-marker"
+                style={{
+                  position: 'absolute',
+                  left: `${(outPoint / duration) * 100}%`,
+                  top: '-4px',
+                  width: '2px',
+                  height: 'calc(100% + 8px)',
+                  backgroundColor: '#ff3b30',
+                  pointerEvents: 'none',
+                  zIndex: 2,
+                  boxShadow: '0 0 6px rgba(255, 59, 48, 0.8)'
+                }}
+              />
+            )}
           </div>
 
           {/* プレイヤーコントロール */}
           <div className="controls-container">
             <div className="controls-left">
-              <button className="btn-control" onClick={() => stepFrame('backward')} disabled={!videoPath} title="1フレーム戻る (Shift+←)">
-                ⏮
+              <button 
+                className="btn-control" 
+                onClick={() => {
+                  if (videoRef.current) {
+                    const skipSec = typeof skipSeconds === 'number' ? skipSeconds : 10;
+                    const newTime = Math.max(0, videoRef.current.currentTime - skipSec);
+                    videoRef.current.currentTime = newTime;
+                    setCurrentTime(newTime);
+                  }
+                }} 
+                disabled={!videoPath} 
+                title={`${skipSeconds || 10}秒戻る`}
+              >
+                -{skipSeconds || 10}
               </button>
               <button className="btn-play-pause" onClick={togglePlay} disabled={!videoPath}>
-                {isPlaying ? '⏸ 一時停止' : '▶ 再生'}
+                {isPlaying ? '⏸' : '▶'}
               </button>
-              <button className="btn-control" onClick={() => stepFrame('forward')} disabled={!videoPath} title="1フレーム進む (Shift+→)">
-                ⏭
+              <button 
+                className="btn-control" 
+                onClick={() => {
+                  if (videoRef.current) {
+                    const skipSec = typeof skipSeconds === 'number' ? skipSeconds : 10;
+                    const newTime = Math.min(duration, videoRef.current.currentTime + skipSec);
+                    videoRef.current.currentTime = newTime;
+                    setCurrentTime(newTime);
+                  }
+                }} 
+                disabled={!videoPath} 
+                title={`${skipSeconds || 10}秒進む`}
+              >
+                +{skipSeconds || 10}
               </button>
-              <span className="time-display">
+
+              {/* スキップ秒数指定 (ボタンのすぐ横に配置) */}
+              <div className="control-item" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '2px' }}>
+                <input
+                  type="number"
+                  min={1}
+                  max={300}
+                  value={skipSeconds}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') setSkipSeconds('');
+                    else {
+                      const num = parseInt(val);
+                      if (!isNaN(num)) setSkipSeconds(num);
+                    }
+                  }}
+                  onBlur={() => {
+                    if (skipSeconds === '' || skipSeconds < 1) {
+                      setSkipSeconds(10);
+                    }
+                  }}
+                  style={{ 
+                    width: '42px', 
+                    background: 'rgba(255,255,255,0.05)', 
+                    border: '1px solid rgba(255,255,255,0.1)', 
+                    color: 'white', 
+                    borderRadius: '4px', 
+                    padding: '2px 4px', 
+                    textAlign: 'center', 
+                    fontSize: '12px' 
+                  }}
+                  disabled={!videoPath}
+                />
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>秒</span>
+              </div>
+
+              <span className="time-display" style={{ marginLeft: '12px' }}>
                 {formatTime(currentTime)} / {formatTime(duration)}
               </span>
+
+              {/* イン点・アウト点設定ボタン (トグル動作) */}
+              {videoPath && (
+                <div className="in-out-buttons" style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+                  <button 
+                    onClick={() => setInPoint(inPoint !== null ? null : currentTime)} 
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '11px',
+                      backgroundColor: inPoint !== null ? 'rgba(0, 229, 255, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                      border: inPoint !== null ? '1px solid #00e5ff' : '1px solid rgba(255, 255, 255, 0.1)',
+                      color: inPoint !== null ? '#00e5ff' : 'rgba(255,255,255,0.6)',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                    title={inPoint !== null ? `イン点: ${formatTime(inPoint)} (クリックでクリア)` : '現在の時間をイン点に設定'}
+                  >
+                    [ IN {inPoint !== null ? '✓' : ''} ]
+                  </button>
+                  <button 
+                    onClick={() => setOutPoint(outPoint !== null ? null : currentTime)} 
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '11px',
+                      backgroundColor: outPoint !== null ? 'rgba(0, 229, 255, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                      border: outPoint !== null ? '1px solid #ff3b30' : '1px solid rgba(255, 255, 255, 0.1)',
+                      color: outPoint !== null ? '#ff3b30' : 'rgba(255,255,255,0.6)',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                    title={outPoint !== null ? `アウト点: ${formatTime(outPoint)} (クリックでクリア)` : '現在の時間をアウト点に設定'}
+                  >
+                    [ OUT {outPoint !== null ? '✓' : ''} ]
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="controls-right">
@@ -834,34 +1159,7 @@ function App(): React.JSX.Element {
               </div>
             </div>
           </div>
-          {videoPath && (
-            <div className="debug-media-status">
-              <div>
-                MIME: {videoPath.toLowerCase().endsWith('.mov') ? 'video/quicktime' : videoPath.toLowerCase().endsWith('.webm') ? 'video/webm' : 'video/mp4'} | 
-                Err: {videoErrorMsg} | 
-                Muted (State/DOM): {isMuted ? 'Muted' : 'Unmuted'} / {videoDomMuted ? 'Muted' : 'Unmuted'} | 
-                Vol (State/DOM): {volume} / {videoDomVolume.toFixed(2)} | 
-                URL: {videoSrc}
-              </div>
-              <div style={{ marginTop: '6px' }}>
-                <button 
-                  onClick={playTestTone}
-                  style={{
-                    padding: '4px 8px',
-                    fontSize: '11px',
-                    backgroundColor: '#00e5ff',
-                    color: '#08080a',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  🔊 スピーカーテスト音 (440Hz) を再生
-                </button>
-              </div>
-            </div>
-          )}
+
         </div>
 
         {/* スコア操作パネル */}
@@ -899,6 +1197,213 @@ function App(): React.JSX.Element {
           teamBName={scoreboardSettings.teamBName}
         />
       </section>
+
+      {/* 動画エクスポートモーダル */}
+      {isExportModalOpen && (
+        <div 
+          className="modal-backdrop"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+        >
+          <div 
+            className="modal-content"
+            style={{
+              backgroundColor: '#16161a',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '24px',
+              width: '540px',
+              maxWidth: '90%',
+              color: 'white',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+            }}
+          >
+            <h2 style={{ marginTop: 0, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: '#00e5ff' }}>
+              🎬 動画をエクスポート
+            </h2>
+
+            {isExporting ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <p style={{ fontWeight: 'bold', fontSize: '15px' }}>{exportStatusText}</p>
+                <div style={{
+                  width: '100%',
+                  height: '8px',
+                  backgroundColor: 'rgba(255,255,255,0.08)',
+                  borderRadius: '4px',
+                  overflow: 'hidden',
+                  marginTop: '12px',
+                  marginBottom: '6px'
+                }}>
+                  <div style={{
+                    width: `${exportProgress}%`,
+                    height: '100%',
+                    backgroundColor: '#00e5ff',
+                    transition: 'width 0.2s ease'
+                  }} />
+                </div>
+                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>進捗: {exportProgress}%</span>
+              </div>
+            ) : (
+              <div>
+                {/* 1. 書き出し範囲情報 */}
+                <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>1. 書き出し範囲</h4>
+                  <p style={{ margin: 0, fontSize: '14px' }}>
+                    {inPoint !== null ? `イン点: ${formatTime(inPoint)}` : '開始: 00:00.00'} 〜{' '}
+                    {outPoint !== null ? `アウト点: ${formatTime(outPoint)}` : `終了: ${formatTime(duration)}`}
+                  </p>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#00e5ff' }}>
+                    総書き出し時間: {formatTime((outPoint !== null ? outPoint : duration) - (inPoint !== null ? inPoint : 0))}
+                  </p>
+                </div>
+
+                {/* 2. 出力設定 */}
+                <div style={{ marginBottom: '16px' }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>2. 出力解像度・エフェクト</h4>
+                  <div style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label style={{ fontSize: '12px' }}>解像度</label>
+                      <select 
+                        value={exportResolution} 
+                        onChange={(e) => setExportResolution(e.target.value)}
+                        style={{ padding: '6px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }}
+                      >
+                        <option value="original">オリジナル解像度を維持</option>
+                        <option value="1080p">1920x1080 (1080p)</option>
+                        <option value="720p">1280x720 (720p)</option>
+                        <option value="480p">854x480 (480p)</option>
+                      </select>
+                    </div>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', marginTop: '16px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={exportFade} 
+                          onChange={(e) => setExportFade(e.target.checked)} 
+                        />
+                        得点変動時のフェード効果
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. タイトルカード設定 */}
+                <div style={{ marginBottom: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <h4 style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>3. 開始前の試合情報タイトル表示 (黒背景)</h4>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={exportTitle} 
+                        onChange={(e) => setExportTitle(e.target.checked)} 
+                      />
+                      有効化
+                    </label>
+                  </div>
+
+                  {exportTitle && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '6px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>大会/イベント名</label>
+                        <input 
+                          type="text" 
+                          value={exportEventName} 
+                          onChange={(e) => setExportEventName(e.target.value)}
+                          style={{ padding: '6px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>対戦カード / 詳細</label>
+                        <input 
+                          type="text" 
+                          value={exportMatchCard} 
+                          onChange={(e) => setExportMatchCard(e.target.value)}
+                          style={{ padding: '6px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>日時・場所 など</label>
+                          <input 
+                            type="text" 
+                            value={exportDatePlace} 
+                            onChange={(e) => setExportDatePlace(e.target.value)}
+                            style={{ padding: '6px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }}
+                          />
+                        </div>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <label style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>表示時間 (秒)</label>
+                          <input 
+                            type="number" 
+                            min={1} 
+                            max={30}
+                            value={exportTitleDuration} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') setExportTitleDuration('');
+                              else {
+                                const num = parseInt(val);
+                                if (!isNaN(num)) setExportTitleDuration(num);
+                              }
+                            }}
+                            onBlur={() => {
+                              if (exportTitleDuration === '' || exportTitleDuration < 1) {
+                                setExportTitleDuration(5);
+                              }
+                            }}
+                            style={{ padding: '6px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', textAlign: 'center' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ボタンアクション */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                  <button 
+                    onClick={() => setIsExportModalOpen(false)}
+                    style={{
+                      padding: '8px 16px',
+                      background: 'rgba(255,255,255,0.05)',
+                      color: 'white',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '6px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    キャンセル
+                  </button>
+                  <button 
+                    onClick={handleExport}
+                    style={{
+                      padding: '8px 20px',
+                      background: '#00e5ff',
+                      color: '#08080a',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    エクスポート実行
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

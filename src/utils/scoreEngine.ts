@@ -35,10 +35,18 @@ export interface ScoreEvent {
   overlayVisible?: boolean;
 }
 
+export interface ExportRange {
+  id: string;
+  name: string;
+  inPoint: number;
+  outPoint: number;
+}
+
 export interface ProjectData {
   matchSettings: MatchSettings;
   events: ScoreEvent[];
   videoPath?: string | null;
+  exportRanges?: ExportRange[];
 }
 
 export const INITIAL_STATE: EventState = {
