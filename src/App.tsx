@@ -4,6 +4,7 @@ import { EventList, formatTime } from './components/EventList'
 import { ScoreController } from './components/ScoreController'
 import {
   ProjectData,
+  ExportPreset,
   getActiveEventState,
   findActiveEventIndex,
   recalculateEventStates,
@@ -78,6 +79,8 @@ function App(): React.JSX.Element {
   const [exportStatusText, setExportStatusText] = useState<string>('')
   const [exportRangeMode, setExportRangeMode] = useState<'all' | 'inout'>('all')
   const [exportType, setExportType] = useState<'normal' | 'transparent'>('normal')
+  const [exportPresets, setExportPresets] = useState<ExportPreset[]>([])
+  const [activePresetId, setActivePresetId] = useState<string | null>(null)
   const [mediaPort, setMediaPort] = useState<number | null>(null)
 
   // 試合設定数値入力の一時ローカル状態 (空文字入力を許容するため)
@@ -191,6 +194,15 @@ function App(): React.JSX.Element {
           if (settings.rangeMode !== undefined) setExportRangeMode(settings.rangeMode as any)
         }
         
+        // プリセットの復元
+        if (data.exportPresets) {
+          setExportPresets(data.exportPresets)
+          setActivePresetId(null)
+        } else {
+          setExportPresets([])
+          setActivePresetId(null)
+        }
+        
         const index = findActiveEventIndex(data.events, currentTime)
         setActiveEventIndex(index)
         setActiveState(getActiveEventState(data.events, currentTime))
@@ -234,7 +246,7 @@ function App(): React.JSX.Element {
         targetPath = selected
       }
 
-      // 保存するデータ構造を整理 (現在の動画絶対パス、イン点/アウト点、エクスポート設定を格納)
+      // 保存するデータ構造を整理 (現在の動画絶対パス、イン点/アウト点、エクスポート設定、書き出しプリセットを格納)
       const dataToSave: ProjectData = {
         ...projectData,
         videoPath: videoPath,
@@ -250,7 +262,8 @@ function App(): React.JSX.Element {
           titleDuration: exportTitleDuration,
           exportType: exportType,
           rangeMode: exportRangeMode
-        }
+        },
+        exportPresets: exportPresets
       }
 
       await invoke('save_project_json', {
@@ -262,6 +275,106 @@ function App(): React.JSX.Element {
     } catch (err: any) {
       console.error('Save failed:', err)
       alert('プロジェクトの保存に失敗しました: ' + err.message)
+    }
+  }
+
+  // プリセットのロード (適用)
+  const applyPreset = (preset: ExportPreset) => {
+    setActivePresetId(preset.id)
+    setInPoint(preset.inPoint)
+    setOutPoint(preset.outPoint)
+    if (preset.exportSettings) {
+      const s = preset.exportSettings
+      if (s.resolution !== undefined) setExportResolution(s.resolution)
+      if (s.fade !== undefined) setExportFade(s.fade)
+      if (s.showTitle !== undefined) setExportTitle(s.showTitle)
+      if (s.eventName !== undefined) setExportEventName(s.eventName)
+      if (s.matchCard !== undefined) setExportMatchCard(s.matchCard)
+      if (s.datePlace !== undefined) setExportDatePlace(s.datePlace)
+      if (s.titleDuration !== undefined) setExportTitleDuration(s.titleDuration)
+      if (s.exportType !== undefined) setExportType(s.exportType)
+      if (s.rangeMode !== undefined) setExportRangeMode(s.rangeMode)
+    }
+  }
+
+  // プリセットの新規追加
+  const addNewPreset = (name: string) => {
+    const newPreset: ExportPreset = {
+      id: Date.now().toString(),
+      name: name,
+      inPoint: inPoint,
+      outPoint: outPoint,
+      exportSettings: {
+        resolution: exportResolution,
+        fade: exportFade,
+        showTitle: exportTitle,
+        eventName: exportEventName,
+        matchCard: exportMatchCard,
+        datePlace: exportDatePlace,
+        titleDuration: exportTitleDuration,
+        exportType: exportType,
+        rangeMode: exportRangeMode
+      }
+    }
+    const updated = [...exportPresets, newPreset]
+    setExportPresets(updated)
+    setActivePresetId(newPreset.id)
+    
+    // プロジェクトデータを更新して保存対象にする
+    if (projectData) {
+      setProjectData({
+        ...projectData,
+        exportPresets: updated
+      })
+    }
+  }
+
+  // 現在の設定で既存のプリセットを上書き
+  const updatePreset = (id: string) => {
+    const updated = exportPresets.map(p => {
+      if (p.id === id) {
+        return {
+          ...p,
+          inPoint: inPoint,
+          outPoint: outPoint,
+          exportSettings: {
+            resolution: exportResolution,
+            fade: exportFade,
+            showTitle: exportTitle,
+            eventName: exportEventName,
+            matchCard: exportMatchCard,
+            datePlace: exportDatePlace,
+            titleDuration: exportTitleDuration,
+            exportType: exportType,
+            rangeMode: exportRangeMode
+          }
+        }
+      }
+      return p
+    })
+    setExportPresets(updated)
+    
+    if (projectData) {
+      setProjectData({
+        ...projectData,
+        exportPresets: updated
+      })
+    }
+  }
+
+  // プリセットの削除
+  const deletePreset = (id: string) => {
+    const updated = exportPresets.filter(p => p.id !== id)
+    setExportPresets(updated)
+    if (activePresetId === id) {
+      setActivePresetId(null)
+    }
+    
+    if (projectData) {
+      setProjectData({
+        ...projectData,
+        exportPresets: updated
+      })
     }
   }
 
@@ -1428,6 +1541,126 @@ function App(): React.JSX.Element {
               </div>
             </div>
           </div>
+
+          {/* 切り出しプリセット (セット切り出しリスト) */}
+          {videoPath && (
+            <div className="presets-container" style={{
+              marginTop: '10px',
+              padding: '10px 12px',
+              background: '#121214',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.05)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  📂 切り出し範囲プリセット (セット別保存)
+                </span>
+                <button
+                  onClick={() => {
+                    const name = prompt('プリセット名を入力してください (例: 第1セット):');
+                    if (name && name.trim()) {
+                      addNewPreset(name.trim());
+                    }
+                  }}
+                  style={{
+                    padding: '2px 8px',
+                    fontSize: '11px',
+                    backgroundColor: 'rgba(0, 229, 255, 0.1)',
+                    border: '1px solid rgba(0, 229, 255, 0.3)',
+                    color: '#00e5ff',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  ＋ 現在の設定を新規追加
+                </button>
+              </div>
+
+              {exportPresets.length === 0 ? (
+                <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '6px 0' }}>
+                  登録されたプリセットはありません。範囲(イン/アウト点)を設定して追加してください。
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {exportPresets.map(preset => {
+                    const isActive = activePresetId === preset.id;
+                    return (
+                      <div
+                        key={preset.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          backgroundColor: isActive ? 'rgba(0, 229, 255, 0.15)' : 'rgba(255,255,255,0.03)',
+                          border: isActive ? '1px solid #00e5ff' : '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: '4px',
+                          padding: '2px 2px 2px 8px',
+                          gap: '6px'
+                        }}
+                      >
+                        <span
+                          onClick={() => applyPreset(preset)}
+                          style={{
+                            fontSize: '11px',
+                            color: isActive ? '#00e5ff' : 'white',
+                            cursor: 'pointer',
+                            fontWeight: isActive ? 'bold' : 'normal'
+                          }}
+                          title={`クリックして適用 (イン: ${formatTime(preset.inPoint !== null ? preset.inPoint : 0)} / アウト: ${formatTime(preset.outPoint !== null ? preset.outPoint : duration)})`}
+                        >
+                          {preset.name}
+                        </span>
+                        
+                        <div style={{ display: 'flex', gap: '2px' }}>
+                          <button
+                            onClick={() => {
+                              if (confirm(`現在のイン点・アウト点およびエクスポート設定で「${preset.name}」を上書きしますか？`)) {
+                                updatePreset(preset.id);
+                                alert('プリセットを更新しました。');
+                              }
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'rgba(255,255,255,0.4)',
+                              cursor: 'pointer',
+                              fontSize: '10px',
+                              padding: '2px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                            title="現在の設定で上書き保存"
+                          >
+                            💾
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`プリセット「${preset.name}」を削除しますか？`)) {
+                                deletePreset(preset.id);
+                              }
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'rgba(255, 59, 48, 0.7)',
+                              cursor: 'pointer',
+                              fontSize: '10px',
+                              padding: '2px',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}
+                            title="削除"
+                          >
+                            ❌
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
         </div>
 

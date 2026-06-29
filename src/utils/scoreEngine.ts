@@ -42,6 +42,24 @@ export interface ExportRange {
   outPoint: number;
 }
 
+export interface ExportPreset {
+  id: string;
+  name: string;
+  inPoint: number | null;
+  outPoint: number | null;
+  exportSettings?: {
+    resolution?: string;
+    fade?: boolean;
+    showTitle?: boolean;
+    eventName?: string;
+    matchCard?: string;
+    datePlace?: string;
+    titleDuration?: number | '';
+    exportType?: 'normal' | 'transparent';
+    rangeMode?: 'all' | 'inout';
+  };
+}
+
 export interface ProjectData {
   matchSettings: MatchSettings;
   events: ScoreEvent[];
@@ -60,6 +78,7 @@ export interface ProjectData {
     exportType?: 'normal' | 'transparent';
     rangeMode?: 'all' | 'inout';
   };
+  exportPresets?: ExportPreset[];
 }
 
 export const INITIAL_STATE: EventState = {
