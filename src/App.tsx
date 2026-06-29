@@ -60,8 +60,7 @@ function App(): React.JSX.Element {
   const [activeEventIndex, setActiveEventIndex] = useState<number>(-1)
   const [activeState, setActiveState] = useState<EventState>(INITIAL_STATE)
 
-  // スキップ秒数 & イン点・アウト点状態
-  const [skipSeconds, setSkipSeconds] = useState<number | ''>(10)
+  // イン点・アウト点状態
   const [inPoint, setInPoint] = useState<number | null>(null)
   const [outPoint, setOutPoint] = useState<number | null>(null)
 
@@ -1012,98 +1011,308 @@ function App(): React.JSX.Element {
                 }}
               />
             )}
+            {/* イン点フラグ (クリックでイン点へシーク) */}
+            {videoPath && duration > 0 && inPoint !== null && (
+              <div 
+                className="in-point-flag"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (videoRef.current) {
+                    videoRef.current.currentTime = inPoint;
+                    setCurrentTime(inPoint);
+                  }
+                }}
+                style={{
+                  position: 'absolute',
+                  left: `${(inPoint / duration) * 100}%`,
+                  transform: 'translateX(-50%)',
+                  top: '-18px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  zIndex: 15,
+                  userSelect: 'none',
+                  filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
+                }}
+                title={`イン点へ移動: ${formatTime(inPoint)}`}
+              >
+                🏳️
+              </div>
+            )}
+            {/* アウト点フラグ (クリックでアウト点へシーク) */}
+            {videoPath && duration > 0 && outPoint !== null && (
+              <div 
+                className="out-point-flag"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (videoRef.current) {
+                    videoRef.current.currentTime = outPoint;
+                    setCurrentTime(outPoint);
+                  }
+                }}
+                style={{
+                  position: 'absolute',
+                  left: `${(outPoint / duration) * 100}%`,
+                  transform: 'translateX(-50%)',
+                  top: '-18px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  zIndex: 15,
+                  userSelect: 'none',
+                  filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
+                }}
+                title={`アウト点へ移動: ${formatTime(outPoint)}`}
+              >
+                🚩
+              </div>
+            )}
           </div>
 
           {/* プレイヤーコントロール */}
-          <div className="controls-container">
-            <div className="controls-left">
-              <button 
-                className="btn-control" 
-                onClick={() => {
-                  if (videoRef.current) {
-                    const skipSec = typeof skipSeconds === 'number' ? skipSeconds : 10;
-                    const newTime = Math.max(0, videoRef.current.currentTime - skipSec);
-                    videoRef.current.currentTime = newTime;
-                    setCurrentTime(newTime);
-                  }
-                }} 
-                disabled={!videoPath} 
-                title={`${skipSeconds || 10}秒戻る`}
-              >
-                -{skipSeconds || 10}
-              </button>
-              <button className="btn-play-pause" onClick={togglePlay} disabled={!videoPath}>
-                {isPlaying ? '⏸' : '▶'}
-              </button>
-              <button 
-                className="btn-control" 
-                onClick={() => {
-                  if (videoRef.current) {
-                    const skipSec = typeof skipSeconds === 'number' ? skipSeconds : 10;
-                    const newTime = Math.min(duration, videoRef.current.currentTime + skipSec);
-                    videoRef.current.currentTime = newTime;
-                    setCurrentTime(newTime);
-                  }
-                }} 
-                disabled={!videoPath} 
-                title={`${skipSeconds || 10}秒進む`}
-              >
-                +{skipSeconds || 10}
-              </button>
-
-              {/* スキップ秒数指定 (ボタンのすぐ横に配置) */}
-              <div className="control-item" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '2px' }}>
-                <input
-                  type="number"
-                  min={1}
-                  max={300}
-                  value={skipSeconds}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '') setSkipSeconds('');
-                    else {
-                      const num = parseInt(val);
-                      if (!isNaN(num)) setSkipSeconds(num);
-                    }
-                  }}
-                  onBlur={() => {
-                    if (skipSeconds === '' || skipSeconds < 1) {
-                      setSkipSeconds(10);
-                    }
-                  }}
-                  style={{ 
-                    width: '42px', 
-                    background: 'rgba(255,255,255,0.05)', 
-                    border: '1px solid rgba(255,255,255,0.1)', 
-                    color: 'white', 
-                    borderRadius: '4px', 
-                    padding: '2px 4px', 
-                    textAlign: 'center', 
-                    fontSize: '12px' 
-                  }}
+          <div className="controls-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', gap: '16px', flexWrap: 'wrap' }}>
+            <div className="controls-left" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
+              {/* スキップ・再生ボタン群 (-10, -5, -1, -f, 再生, +f, +1, +5, +10) */}
+              <div className="playback-group" style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <button 
+                  onClick={() => { if (videoRef.current) { const t = Math.max(0, videoRef.current.currentTime - 10); videoRef.current.currentTime = t; setCurrentTime(t); } }}
                   disabled={!videoPath}
-                />
-                <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>秒</span>
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: 'white',
+                    padding: '4px 6px',
+                    fontSize: '11px',
+                    borderRadius: '4px',
+                    cursor: !videoPath ? 'not-allowed' : 'pointer',
+                    opacity: !videoPath ? 0.4 : 1,
+                    minWidth: '28px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    transition: 'all 0.15s'
+                  }}
+                  title="10秒戻る"
+                >
+                  -10
+                </button>
+                <button 
+                  onClick={() => { if (videoRef.current) { const t = Math.max(0, videoRef.current.currentTime - 5); videoRef.current.currentTime = t; setCurrentTime(t); } }}
+                  disabled={!videoPath}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: 'white',
+                    padding: '4px 6px',
+                    fontSize: '11px',
+                    borderRadius: '4px',
+                    cursor: !videoPath ? 'not-allowed' : 'pointer',
+                    opacity: !videoPath ? 0.4 : 1,
+                    minWidth: '28px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    transition: 'all 0.15s'
+                  }}
+                  title="5秒戻る"
+                >
+                  -5
+                </button>
+                <button 
+                  onClick={() => { if (videoRef.current) { const t = Math.max(0, videoRef.current.currentTime - 1); videoRef.current.currentTime = t; setCurrentTime(t); } }}
+                  disabled={!videoPath}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: 'white',
+                    padding: '4px 6px',
+                    fontSize: '11px',
+                    borderRadius: '4px',
+                    cursor: !videoPath ? 'not-allowed' : 'pointer',
+                    opacity: !videoPath ? 0.4 : 1,
+                    minWidth: '28px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    transition: 'all 0.15s'
+                  }}
+                  title="1秒戻る"
+                >
+                  -1
+                </button>
+                <button 
+                  onClick={() => { if (videoRef.current) { const t = Math.max(0, videoRef.current.currentTime - 1/30); videoRef.current.currentTime = t; setCurrentTime(t); } }}
+                  disabled={!videoPath}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: 'white',
+                    padding: '4px 6px',
+                    fontSize: '11px',
+                    borderRadius: '4px',
+                    cursor: !videoPath ? 'not-allowed' : 'pointer',
+                    opacity: !videoPath ? 0.4 : 1,
+                    minWidth: '28px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    transition: 'all 0.15s'
+                  }}
+                  title="1フレーム戻る (Shift+←)"
+                >
+                  -f
+                </button>
+
+                <button 
+                  onClick={togglePlay} 
+                  disabled={!videoPath}
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    backgroundColor: !videoPath ? 'rgba(255, 255, 255, 0.1)' : '#00e5ff',
+                    color: !videoPath ? 'rgba(255, 255, 255, 0.4)' : '#08080a',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: !videoPath ? 'not-allowed' : 'pointer',
+                    fontSize: '12px',
+                    margin: '0 4px',
+                    fontWeight: 'bold',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  {isPlaying ? '⏸' : '▶'}
+                </button>
+
+                <button 
+                  onClick={() => { if (videoRef.current) { const t = Math.min(duration, videoRef.current.currentTime + 1/30); videoRef.current.currentTime = t; setCurrentTime(t); } }}
+                  disabled={!videoPath}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: 'white',
+                    padding: '4px 6px',
+                    fontSize: '11px',
+                    borderRadius: '4px',
+                    cursor: !videoPath ? 'not-allowed' : 'pointer',
+                    opacity: !videoPath ? 0.4 : 1,
+                    minWidth: '28px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    transition: 'all 0.15s'
+                  }}
+                  title="1フレーム進む (Shift+→)"
+                >
+                  +f
+                </button>
+                <button 
+                  onClick={() => { if (videoRef.current) { const t = Math.min(duration, videoRef.current.currentTime + 1); videoRef.current.currentTime = t; setCurrentTime(t); } }}
+                  disabled={!videoPath}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: 'white',
+                    padding: '4px 6px',
+                    fontSize: '11px',
+                    borderRadius: '4px',
+                    cursor: !videoPath ? 'not-allowed' : 'pointer',
+                    opacity: !videoPath ? 0.4 : 1,
+                    minWidth: '28px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    transition: 'all 0.15s'
+                  }}
+                  title="1秒進む"
+                >
+                  +1
+                </button>
+                <button 
+                  onClick={() => { if (videoRef.current) { const t = Math.min(duration, videoRef.current.currentTime + 5); videoRef.current.currentTime = t; setCurrentTime(t); } }}
+                  disabled={!videoPath}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: 'white',
+                    padding: '4px 6px',
+                    fontSize: '11px',
+                    borderRadius: '4px',
+                    cursor: !videoPath ? 'not-allowed' : 'pointer',
+                    opacity: !videoPath ? 0.4 : 1,
+                    minWidth: '28px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    transition: 'all 0.15s'
+                  }}
+                  title="5秒進む"
+                >
+                  +5
+                </button>
+                <button 
+                  onClick={() => { if (videoRef.current) { const t = Math.min(duration, videoRef.current.currentTime + 10); videoRef.current.currentTime = t; setCurrentTime(t); } }}
+                  disabled={!videoPath}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    color: 'white',
+                    padding: '4px 6px',
+                    fontSize: '11px',
+                    borderRadius: '4px',
+                    cursor: !videoPath ? 'not-allowed' : 'pointer',
+                    opacity: !videoPath ? 0.4 : 1,
+                    minWidth: '28px',
+                    height: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    transition: 'all 0.15s'
+                  }}
+                  title="10秒進む"
+                >
+                  +10
+                </button>
               </div>
 
-              <span className="time-display" style={{ marginLeft: '12px' }}>
+              <span className="time-display" style={{ marginLeft: '12px', fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', whiteSpace: 'nowrap' }}>
                 {formatTime(currentTime)} / {formatTime(duration)}
               </span>
 
-              {/* イン点・アウト点設定ボタン (トグル動作) */}
+              {/* イン点・アウト点設定ボタン (トグル動作、レイアウト崩れ対策) */}
               {videoPath && (
-                <div className="in-out-buttons" style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+                <div className="in-out-buttons" style={{ display: 'flex', gap: '4px', marginLeft: '12px', alignItems: 'center' }}>
                   <button 
                     onClick={() => setInPoint(inPoint !== null ? null : currentTime)} 
                     style={{
-                      padding: '4px 8px',
+                      height: '24px',
+                      padding: '0 8px',
                       fontSize: '11px',
                       backgroundColor: inPoint !== null ? 'rgba(0, 229, 255, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                       border: inPoint !== null ? '1px solid #00e5ff' : '1px solid rgba(255, 255, 255, 0.1)',
                       color: inPoint !== null ? '#00e5ff' : 'rgba(255,255,255,0.6)',
                       borderRadius: '4px',
                       cursor: 'pointer',
-                      fontWeight: 'bold'
+                      fontWeight: 'bold',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}
                     title={inPoint !== null ? `イン点: ${formatTime(inPoint)} (クリックでクリア)` : '現在の時間をイン点に設定'}
                   >
@@ -1112,14 +1321,19 @@ function App(): React.JSX.Element {
                   <button 
                     onClick={() => setOutPoint(outPoint !== null ? null : currentTime)} 
                     style={{
-                      padding: '4px 8px',
+                      height: '24px',
+                      padding: '0 8px',
                       fontSize: '11px',
-                      backgroundColor: outPoint !== null ? 'rgba(0, 229, 255, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                      backgroundColor: outPoint !== null ? 'rgba(255, 59, 48, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                       border: outPoint !== null ? '1px solid #ff3b30' : '1px solid rgba(255, 255, 255, 0.1)',
                       color: outPoint !== null ? '#ff3b30' : 'rgba(255,255,255,0.6)',
                       borderRadius: '4px',
                       cursor: 'pointer',
-                      fontWeight: 'bold'
+                      fontWeight: 'bold',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}
                     title={outPoint !== null ? `アウト点: ${formatTime(outPoint)} (クリックでクリア)` : '現在の時間をアウト点に設定'}
                   >
@@ -1129,11 +1343,11 @@ function App(): React.JSX.Element {
               )}
             </div>
 
-            <div className="controls-right">
+            <div className="controls-right" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'nowrap' }}>
               {/* 再生速度 */}
-              <div className="control-item">
-                <label>速度:</label>
-                <select value={playbackRate} onChange={handlePlaybackRateChange} disabled={!videoPath}>
+              <div className="control-item" style={{ display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                <label style={{ fontSize: '12px' }}>速度:</label>
+                <select value={playbackRate} onChange={handlePlaybackRateChange} disabled={!videoPath} style={{ padding: '2px 4px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', fontSize: '12px' }}>
                   <option value={0.5}>0.5x</option>
                   <option value={1.0}>1.0x</option>
                   <option value={1.5}>1.5x</option>
@@ -1142,8 +1356,8 @@ function App(): React.JSX.Element {
               </div>
 
               {/* 音量 */}
-              <div className="control-item volume-control">
-                <button className="btn-mute" onClick={toggleMute} disabled={!videoPath}>
+              <div className="control-item volume-control" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <button className="btn-mute" onClick={toggleMute} disabled={!videoPath} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '14px', padding: 0 }}>
                   {isMuted ? '🔇' : '🔊'}
                 </button>
                 <input
@@ -1154,7 +1368,7 @@ function App(): React.JSX.Element {
                   value={isMuted ? 0 : volume}
                   onChange={handleVolumeChange}
                   disabled={!videoPath}
-                  className="volume-slider"
+                  style={{ width: '60px', height: '4px', cursor: 'pointer' }}
                 />
               </div>
             </div>
