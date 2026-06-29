@@ -29,7 +29,7 @@ export interface EventState {
 export interface ScoreEvent {
   id: string;
   timestamp: number;
-  type: 'serve_change' | 'point' | 'set_confirm' | 'reset' | 'set_score_direct' | 'overlay_toggle';
+  type: 'serve_change' | 'point' | 'set_confirm' | 'reset' | 'set_score_direct' | 'overlay_toggle' | 'timeout';
   team: 'A' | 'B' | null;
   state: EventState;
   overlayVisible?: boolean;

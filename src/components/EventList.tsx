@@ -55,6 +55,9 @@ export const EventList: React.FC<EventListProps> = ({
               detailText = `試合スコア リセット`
             } else if (type === 'overlay_toggle') {
               detailText = `得点板: ${event.overlayVisible ? '表示' : '非表示'}`
+            } else if (type === 'timeout') {
+              const actingTeam = team === 'A' ? teamAName || 'チームA' : teamBName || 'チームB'
+              detailText = `${actingTeam} タイムアウト`
             }
 
             return (
@@ -79,10 +82,10 @@ export const EventList: React.FC<EventListProps> = ({
                       borderRadius: '4px',
                       fontSize: '10px',
                       fontWeight: 'bold',
-                      backgroundColor: type === 'point' ? 'rgba(0, 229, 255, 0.15)' : 'rgba(255, 255, 255, 0.08)',
-                      color: type === 'point' ? '#00e5ff' : 'rgba(255, 255, 255, 0.6)'
+                      backgroundColor: type === 'point' ? 'rgba(0, 229, 255, 0.15)' : type === 'timeout' ? 'rgba(255, 200, 0, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                      color: type === 'point' ? '#00e5ff' : type === 'timeout' ? '#ffd740' : 'rgba(255, 255, 255, 0.6)'
                     }}>
-                      {type === 'point' ? '得点' : type === 'serve_change' ? 'サーブ' : type === 'set_confirm' ? '確定' : type === 'overlay_toggle' ? '表示設定' : 'その他'}
+                      {type === 'point' ? '得点' : type === 'serve_change' ? 'サーブ' : type === 'set_confirm' ? '確定' : type === 'overlay_toggle' ? '表示設定' : type === 'timeout' ? 'タイムアウト' : 'その他'}
                     </span>
                     {state.setWinner && (
                       <span className="set-winner-tag" style={{
@@ -153,6 +156,18 @@ export const EventList: React.FC<EventListProps> = ({
                       <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>{teamBName || 'チームB'}</span>
 
 
+                    </div>
+                  ) : type === 'timeout' ? (
+                    /* タイムアウトイベント */
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
+                      <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>タイムアウト取得:</span>
+                      <span style={{
+                        fontWeight: 'bold',
+                        fontSize: '12px',
+                        color: team === 'A' ? '#00e5ff' : '#ff3b30'
+                      }}>
+                        {team === 'A' ? teamAName || 'チームA' : teamBName || 'チームB'}
+                      </span>
                     </div>
                   ) : (
                     /* 得点イベント以外 (サーブ権やリセット等) */

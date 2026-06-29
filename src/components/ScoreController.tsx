@@ -10,6 +10,7 @@ interface ScoreControllerProps {
   onSetConfirm: () => void
   onToggleServe: (team: 'A' | 'B') => void
   onReset: () => void
+  onTimeout: (team: 'A' | 'B') => void
   showOverlay: boolean
   onToggleOverlay: () => void
   onUndo: () => void
@@ -24,6 +25,7 @@ export const ScoreController: React.FC<ScoreControllerProps> = ({
   onSetConfirm,
   onToggleServe,
   onReset,
+  onTimeout,
   showOverlay,
   onToggleOverlay,
   onUndo,
@@ -57,6 +59,15 @@ export const ScoreController: React.FC<ScoreControllerProps> = ({
         <div className="sets-adjust-direct">
           <span>セット: {setsA}</span>
         </div>
+
+        <button
+          className="btn-timeout"
+          onClick={() => onTimeout('A')}
+          disabled={disabled || matchFinished}
+          title="チームAのタイムアウト"
+        >
+          ⏱ TО
+        </button>
       </div>
 
       {/* 中央アクションブロック (確定ボタンやシステム操作) */}
@@ -123,6 +134,15 @@ export const ScoreController: React.FC<ScoreControllerProps> = ({
         <div className="sets-adjust-direct">
           <span>セット: {setsB}</span>
         </div>
+
+        <button
+          className="btn-timeout"
+          onClick={() => onTimeout('B')}
+          disabled={disabled || matchFinished}
+          title="チームBのタイムアウト"
+        >
+          ⏱ TО
+        </button>
       </div>
     </div>
   )

@@ -70,9 +70,9 @@ function App(): React.JSX.Element {
   const [exportResolution, setExportResolution] = useState<string>('original')
   const [exportFade, setExportFade] = useState<boolean>(true)
   const [exportTitle, setExportTitle] = useState<boolean>(false)
-  const [exportEventName, setExportEventName] = useState<string>('令和8年度 関東高等学校バレーボール大会')
-  const [exportMatchCard, setExportMatchCard] = useState<string>('男子決勝 大宮東 VS 伊奈学園 (第1セット)')
-  const [exportDatePlace, setExportDatePlace] = useState<string>('2026年6月26日 / さいたまスーパーアリーナ')
+  const [exportEventName, setExportEventName] = useState<string>('')
+  const [exportMatchCard, setExportMatchCard] = useState<string>('')
+  const [exportDatePlace, setExportDatePlace] = useState<string>('')
   const [exportTitleDuration, setExportTitleDuration] = useState<number | ''>(5)
   const [exportProgress, setExportProgress] = useState<number>(0)
   const [isExporting, setIsExporting] = useState<boolean>(false)
@@ -297,6 +297,40 @@ function App(): React.JSX.Element {
     }
   }
 
+  // プリセットデータの自動保存
+  const autoSavePresets = async (updatedPresets: ExportPreset[]) => {
+    if (!projectData || !jsonPath) return
+    try {
+      const dataToSave: ProjectData = {
+        ...projectData,
+        videoPath: videoPath,
+        inPoint: inPoint,
+        outPoint: outPoint,
+        exportSettings: {
+          resolution: exportResolution,
+          fade: exportFade,
+          showTitle: exportTitle,
+          eventName: exportEventName,
+          matchCard: exportMatchCard,
+          datePlace: exportDatePlace,
+          titleDuration: exportTitleDuration,
+          exportType: exportType,
+          rangeMode: exportRangeMode
+        },
+        exportPresets: updatedPresets
+      }
+      
+      await invoke('save_project_json', {
+        path: jsonPath,
+        content: JSON.stringify(dataToSave, null, 2)
+      })
+      setProjectData(dataToSave)
+      console.log('[AutoSave] Presets saved automatically to JSON:', jsonPath)
+    } catch (err) {
+      console.error('[AutoSave] Failed to auto-save presets:', err)
+    }
+  }
+
   // プリセットの新規追加
   const addNewPreset = (name: string) => {
     const newPreset: ExportPreset = {
@@ -320,16 +354,16 @@ function App(): React.JSX.Element {
     setExportPresets(updated)
     setActivePresetId(newPreset.id)
     
-    // プロジェクトデータを更新して保存対象にする
     if (projectData) {
       setProjectData({
         ...projectData,
         exportPresets: updated
       })
+      autoSavePresets(updated)
     }
   }
 
-  // 現在の設定で既存のプリセットを上書き
+  // 現在の設定で既存 of プリセットを上書き
   const updatePreset = (id: string) => {
     const updated = exportPresets.map(p => {
       if (p.id === id) {
@@ -359,6 +393,7 @@ function App(): React.JSX.Element {
         ...projectData,
         exportPresets: updated
       })
+      autoSavePresets(updated)
     }
   }
 
@@ -375,6 +410,52 @@ function App(): React.JSX.Element {
         ...projectData,
         exportPresets: updated
       })
+      autoSavePresets(updated)
+    }
+  }
+
+  // タイムアウトイベントの追加
+  const handleTimeout = (team: 'A' | 'B'): void => {
+    if (!projectData) return
+    
+    const currentEventState = activeEventIndex >= 0 
+      ? projectData.events[activeEventIndex].state 
+      : INITIAL_STATE
+      
+    const newEvent: ScoreEvent = {
+      id: `timeout_${Date.now()}`,
+      timestamp: currentTime,
+      type: 'timeout',
+      team: team,
+      state: {
+        ...currentEventState,
+        servingTeam: currentEventState.servingTeam,
+        matchFinished: currentEventState.matchFinished,
+        setWinner: null
+      }
+    }
+    
+    const updatedEvents = [...projectData.events, newEvent]
+    updatedEvents.sort((a, b) => a.timestamp - b.timestamp)
+    
+    const recalculated = recalculateEventStates(updatedEvents, projectData.matchSettings)
+    
+    const updatedProject = {
+      ...projectData,
+      events: recalculated
+    }
+    setProjectData(updatedProject)
+    
+    const newIndex = recalculated.findIndex(e => e.id === newEvent.id)
+    setActiveEventIndex(newIndex)
+    setActiveState(recalculated[newIndex].state)
+    
+    // イベント追加後、もしプロジェクトファイル(jsonPath)があれば自動保存する
+    if (jsonPath) {
+      invoke('save_project_json', {
+        path: jsonPath,
+        content: JSON.stringify(updatedProject, null, 2)
+      }).catch(err => console.error('[AutoSave] Failed to auto-save timeout event:', err))
     }
   }
 
@@ -748,7 +829,7 @@ function App(): React.JSX.Element {
     fetchPort()
   }, [])
 
-  // モーダルが開かれた時の初期範囲モード自動決定
+  // モーダルが開かれた時の初期範囲モード自動決定 & 対戦カード名の自動生成
   useEffect(() => {
     if (isExportModalOpen) {
       if (inPoint !== null || outPoint !== null) {
@@ -758,6 +839,14 @@ function App(): React.JSX.Element {
       }
       // モードは常に通常エクスポートをデフォルトに
       setExportType('normal')
+      // 対戦カード名を自動生成（チーム名 + アクティブなプリセット名）
+      const teamA = scoreboardSettings.teamAName || 'チームA'
+      const teamB = scoreboardSettings.teamBName || 'チームB'
+      const activePreset = exportPresets.find(p => p.id === activePresetId)
+      const matchCardAuto = activePreset
+        ? `${teamA} VS ${teamB} (${activePreset.name})`
+        : `${teamA} VS ${teamB}`
+      setExportMatchCard(matchCardAuto)
     }
   }, [isExportModalOpen, inPoint, outPoint])
 
@@ -1675,6 +1764,7 @@ function App(): React.JSX.Element {
               onSetConfirm={handleSetConfirm}
               onToggleServe={handleToggleServe}
               onReset={handleReset}
+              onTimeout={handleTimeout}
               showOverlay={activeState.overlayVisible}
               onToggleOverlay={handleToggleOverlay}
               onUndo={handleUndo}
@@ -1878,6 +1968,7 @@ function App(): React.JSX.Element {
                         <input 
                           type="text" 
                           value={exportEventName} 
+                          placeholder="〇〇大会・〇〇選手権など"
                           onChange={(e) => setExportEventName(e.target.value)}
                           style={{ padding: '6px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }}
                         />
@@ -1887,6 +1978,7 @@ function App(): React.JSX.Element {
                         <input 
                           type="text" 
                           value={exportMatchCard} 
+                          placeholder="チームA VS チームB (第〇セット)"
                           onChange={(e) => setExportMatchCard(e.target.value)}
                           style={{ padding: '6px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }}
                         />
@@ -1897,6 +1989,7 @@ function App(): React.JSX.Element {
                           <input 
                             type="text" 
                             value={exportDatePlace} 
+                            placeholder="〇年〇月〇日 / 〇〇体育館など"
                             onChange={(e) => setExportDatePlace(e.target.value)}
                             style={{ padding: '6px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }}
                           />
