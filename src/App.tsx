@@ -835,6 +835,12 @@ function App(): React.JSX.Element {
     fetchPort()
   }, [])
 
+  // セット数変化時にプリセット名を自動更新 (例: 「第2セット」)
+  useEffect(() => {
+    const setNum = activeState.setsA + activeState.setsB + 1
+    setNewPresetName(`第${setNum}セット`)
+  }, [activeState.setsA, activeState.setsB])
+
   // モーダルが開かれた時の初期範囲モード自動決定 & 対戦カード名の自動生成
   useEffect(() => {
     if (isExportModalOpen) {
@@ -1656,7 +1662,8 @@ function App(): React.JSX.Element {
                     value={newPresetName}
                     onChange={(e) => setNewPresetName(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && newPresetName.trim()) {
+                      // isComposing=true の間は IME変換中なので無視
+                      if (e.key === 'Enter' && !e.nativeEvent.isComposing && newPresetName.trim()) {
                         addNewPreset(newPresetName.trim())
                         setNewPresetName('')
                       }
