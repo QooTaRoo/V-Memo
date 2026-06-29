@@ -5,51 +5,57 @@ import './ScoreboardOverlay.css'
 interface ScoreboardOverlayProps {
   state: EventState
   settings: MatchSettings
+  swapTeams?: boolean
 }
 
-export const ScoreboardOverlay: React.FC<ScoreboardOverlayProps> = ({ state, settings }) => {
+export const ScoreboardOverlay: React.FC<ScoreboardOverlayProps> = ({ state, settings, swapTeams = false }) => {
   const { teamAName, teamBName, overlaySize, overlayPosition } = settings
   const { scoreA, scoreB, setsA, setsB, servingTeam, setScores } = state
 
   const positionClass = `overlay-pos-${overlayPosition}`
   const scaleStyle = {
-    transform: `scale(${overlaySize / 200})`, // 50% of the original size becomes the new 100%
+    transform: `scale(${overlaySize / 200})`,
     transformOrigin: overlayPosition.replace('-', ' ')
   }
 
   const totalSetDots = Math.ceil(settings.maxSets / 2)
 
+  const teamARow = (
+    <div className="team-row" key="teamA">
+      <div className="serve-indicator-container">
+        {servingTeam === 'A' && <span className="serve-volleyball">🏐</span>}
+      </div>
+      <span className="team-name">{teamAName || 'TEAM A'}</span>
+      <span className="team-score">{scoreA}</span>
+      <div className="team-sets">
+        {Array.from({ length: totalSetDots }).map((_, i) => (
+          <span key={i} className={`set-dot ${i < setsA ? 'filled' : ''}`} />
+        ))}
+      </div>
+    </div>
+  )
+
+  const teamBRow = (
+    <div className="team-row" key="teamB">
+      <div className="serve-indicator-container">
+        {servingTeam === 'B' && <span className="serve-volleyball">🏐</span>}
+      </div>
+      <span className="team-name">{teamBName || 'TEAM B'}</span>
+      <span className="team-score">{scoreB}</span>
+      <div className="team-sets">
+        {Array.from({ length: totalSetDots }).map((_, i) => (
+          <span key={i} className={`set-dot ${i < setsB ? 'filled' : ''}`} />
+        ))}
+      </div>
+    </div>
+  )
+
   return (
     <div className={`scoreboard-overlay ${positionClass}`} style={scaleStyle}>
       <div className="scoreboard-glass">
         <div className="scoreboard-teams">
-          {/* チームA */}
-          <div className="team-row">
-            <div className="serve-indicator-container">
-              {servingTeam === 'A' && <span className="serve-volleyball">🏐</span>}
-            </div>
-            <span className="team-name">{teamAName || 'TEAM A'}</span>
-            <span className="team-score">{scoreA}</span>
-            <div className="team-sets">
-              {Array.from({ length: totalSetDots }).map((_, i) => (
-                <span key={i} className={`set-dot ${i < setsA ? 'filled' : ''}`} />
-              ))}
-            </div>
-          </div>
-
-          {/* チームB */}
-          <div className="team-row">
-            <div className="serve-indicator-container">
-              {servingTeam === 'B' && <span className="serve-volleyball">🏐</span>}
-            </div>
-            <span className="team-name">{teamBName || 'TEAM B'}</span>
-            <span className="team-score">{scoreB}</span>
-            <div className="team-sets">
-              {Array.from({ length: totalSetDots }).map((_, i) => (
-                <span key={i} className={`set-dot ${i < setsB ? 'filled' : ''}`} />
-              ))}
-            </div>
-          </div>
+          {swapTeams ? teamBRow : teamARow}
+          {swapTeams ? teamARow : teamBRow}
         </div>
 
         {/* 過去セットのスコア履歴 */}

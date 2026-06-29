@@ -82,6 +82,7 @@ function App(): React.JSX.Element {
   const [exportPresets, setExportPresets] = useState<ExportPreset[]>([])
   const [activePresetId, setActivePresetId] = useState<string | null>(null)
   const [newPresetName, setNewPresetName] = useState<string>('')
+  const [swapTeams, setSwapTeams] = useState<boolean>(false)
   const [mediaPort, setMediaPort] = useState<number | null>(null)
 
   // 試合設定数値入力の一時ローカル状態 (空文字入力を許容するため)
@@ -835,10 +836,12 @@ function App(): React.JSX.Element {
     fetchPort()
   }, [])
 
-  // セット数変化時にプリセット名を自動更新 (例: 「第2セット」)
+  // セット数変化時にプリセット名を自動更新 & チームの左右自動入れ替え
   useEffect(() => {
     const setNum = activeState.setsA + activeState.setsB + 1
     setNewPresetName(`第${setNum}セット`)
+    // 偶数セット (第2, 4...) は自動でチームを入れ替え
+    setSwapTeams((setNum % 2) === 0)
   }, [activeState.setsA, activeState.setsB])
 
   // モーダルが開かれた時の初期範囲モード自動決定 & 対戦カード名の自動生成
@@ -1152,6 +1155,31 @@ function App(): React.JSX.Element {
                 />
               </div>
             </div>
+            <div className="field-group-row" style={{ marginTop: '8px' }}>
+              <div className="field-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
+                <label style={{ marginBottom: 0 }}>チーム表示順</label>
+                <button
+                  onClick={() => setSwapTeams(s => !s)}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    backgroundColor: swapTeams ? 'rgba(255, 200, 0, 0.15)' : 'rgba(255,255,255,0.06)',
+                    border: swapTeams ? '1px solid rgba(255, 200, 0, 0.4)' : '1px solid rgba(255,255,255,0.12)',
+                    color: swapTeams ? '#ffd740' : 'rgba(255,255,255,0.7)',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    whiteSpace: 'nowrap'
+                  }}
+                  title="クリックしてA/Bの上下を入れ替え (セット変わりに自動でも切り替わります)"
+                >
+                  {swapTeams ? '↕ B / A' : '↕ A / B'}
+                </button>
+                <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)' }}>
+                  (セット毎に自動切替)
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </aside>
@@ -1183,7 +1211,7 @@ function App(): React.JSX.Element {
                 onClick={togglePlay}
               />
               {/* スコアボードの重ね合わせ表示 (ON/OFFトグル連動) */}
-              {activeState.overlayVisible && <ScoreboardOverlay state={activeState} settings={scoreboardSettings} />}
+              {activeState.overlayVisible && <ScoreboardOverlay state={activeState} settings={scoreboardSettings} swapTeams={swapTeams} />}
             </div>
           ) : (
             <div className="video-placeholder" onClick={handleSelectVideo}>
