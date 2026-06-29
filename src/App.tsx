@@ -1585,9 +1585,8 @@ function App(): React.JSX.Element {
                   </div>
                 </div>
 
-                {/* 4. タイトルカード設定 (透過出力時は非表示) */}
-                {exportType === 'normal' && (
-                  <div style={{ marginBottom: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
+                {/* 4. タイトルカード設定 */}
+                <div style={{ marginBottom: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                       <h4 style={{ margin: 0, fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>4. 開始前の試合情報タイトル表示 (黒背景)</h4>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
@@ -1657,7 +1656,6 @@ function App(): React.JSX.Element {
                     </div>
                   )}
                 </div>
-                )}
 
                 {/* ボタンアクション */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
