@@ -50,7 +50,7 @@ export const EventList: React.FC<EventListProps> = ({
               const actingTeam = team === 'A' ? teamAName || 'Aチーム' : teamBName || 'Bチーム'
               detailText = `${actingTeam} 得点`
             } else if (type === 'set_confirm') {
-              detailText = `セット確定 (第${state.setsA + state.setsB}セット終了)`
+              detailText = `第${state.setsA + state.setsB}セット終了`
             } else if (type === 'reset') {
               detailText = `試合スコア リセット`
             } else if (type === 'overlay_toggle') {
@@ -158,9 +158,11 @@ export const EventList: React.FC<EventListProps> = ({
                     /* 得点イベント以外 (サーブ権やリセット等) */
                     <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span>{detailText}</span>
-                      <span style={{ color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>
-                        ({state.scoreA} - {state.scoreB})
-                      </span>
+                      {type !== 'set_confirm' && (
+                        <span style={{ color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>
+                          ({state.scoreA} - {state.scoreB})
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
