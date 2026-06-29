@@ -107,9 +107,7 @@ export const EventList: React.FC<EventListProps> = ({
                       title="イベント削除"
                       onClick={(e) => {
                         e.stopPropagation()
-                        if (window.confirm('このイベントを削除しますか？')) {
-                          onEventDelete(event.timestamp)
-                        }
+                        onEventDelete(event.timestamp)
                       }}
                       style={{
                         background: 'none',

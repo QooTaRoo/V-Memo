@@ -81,6 +81,7 @@ function App(): React.JSX.Element {
   const [exportType, setExportType] = useState<'normal' | 'transparent'>('normal')
   const [exportPresets, setExportPresets] = useState<ExportPreset[]>([])
   const [activePresetId, setActivePresetId] = useState<string | null>(null)
+  const [newPresetName, setNewPresetName] = useState<string>('')
   const [mediaPort, setMediaPort] = useState<number | null>(null)
 
   // 試合設定数値入力の一時ローカル状態 (空文字入力を許容するため)
@@ -1645,30 +1646,57 @@ function App(): React.JSX.Element {
               borderRadius: '8px',
               border: '1px solid rgba(255, 255, 255, 0.05)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  📂 切り出し範囲プリセット (セット別保存)
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', gap: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'rgba(255,255,255,0.7)', flexShrink: 0 }}>
+                  📂 切り出し範囲プリセット
                 </span>
-                <button
-                  onClick={() => {
-                    const name = prompt('プリセット名を入力してください (例: 第1セット):');
-                    if (name && name.trim()) {
-                      addNewPreset(name.trim());
-                    }
-                  }}
-                  style={{
-                    padding: '2px 8px',
-                    fontSize: '11px',
-                    backgroundColor: 'rgba(0, 229, 255, 0.1)',
-                    border: '1px solid rgba(0, 229, 255, 0.3)',
-                    color: '#00e5ff',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  ＋ 現在の設定を新規追加
-                </button>
+                <div style={{ display: 'flex', gap: '4px', flex: 1, justifyContent: 'flex-end' }}>
+                  <input
+                    type="text"
+                    value={newPresetName}
+                    onChange={(e) => setNewPresetName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newPresetName.trim()) {
+                        addNewPreset(newPresetName.trim())
+                        setNewPresetName('')
+                      }
+                    }}
+                    placeholder="例: 第1セット"
+                    style={{
+                      flex: 1,
+                      maxWidth: '160px',
+                      padding: '3px 8px',
+                      fontSize: '11px',
+                      background: '#1a1a1e',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      borderRadius: '4px',
+                      color: 'white',
+                      outline: 'none'
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      if (newPresetName.trim()) {
+                        addNewPreset(newPresetName.trim())
+                        setNewPresetName('')
+                      }
+                    }}
+                    disabled={!newPresetName.trim()}
+                    style={{
+                      padding: '3px 10px',
+                      fontSize: '11px',
+                      backgroundColor: newPresetName.trim() ? 'rgba(0, 229, 255, 0.15)' : 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(0, 229, 255, 0.3)',
+                      color: newPresetName.trim() ? '#00e5ff' : 'rgba(255,255,255,0.3)',
+                      borderRadius: '4px',
+                      cursor: newPresetName.trim() ? 'pointer' : 'default',
+                      fontWeight: 'bold',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    ＋ 追加
+                  </button>
+                </div>
               </div>
 
               {exportPresets.length === 0 ? (
@@ -1707,12 +1735,7 @@ function App(): React.JSX.Element {
                         
                         <div style={{ display: 'flex', gap: '2px' }}>
                           <button
-                            onClick={() => {
-                              if (confirm(`現在のイン点・アウト点およびエクスポート設定で「${preset.name}」を上書きしますか？`)) {
-                                updatePreset(preset.id);
-                                alert('プリセットを更新しました。');
-                              }
-                            }}
+                            onClick={() => updatePreset(preset.id)}
                             style={{
                               background: 'none',
                               border: 'none',
@@ -1728,11 +1751,7 @@ function App(): React.JSX.Element {
                             💾
                           </button>
                           <button
-                            onClick={() => {
-                              if (confirm(`プリセット「${preset.name}」を削除しますか？`)) {
-                                deletePreset(preset.id);
-                              }
-                            }}
+                            onClick={() => deletePreset(preset.id)}
                             style={{
                               background: 'none',
                               border: 'none',
