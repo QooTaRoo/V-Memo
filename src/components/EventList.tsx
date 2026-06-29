@@ -62,11 +62,26 @@ export const EventList: React.FC<EventListProps> = ({
                 key={event.id}
                 className={`event-card ${isActive ? 'active' : ''}`}
                 onClick={() => onEventClick(event.timestamp)}
+                style={{
+                  padding: '8px 10px',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                  cursor: 'pointer',
+                  backgroundColor: isActive ? 'rgba(0, 229, 255, 0.06)' : 'transparent',
+                  transition: 'background-color 0.15s'
+                }}
               >
-                <div className="event-card-header">
-                  <div className="header-left">
-                    <span className="event-time">{formatTime(event.timestamp)}</span>
-                    <span className={`event-tag tag-${type}`}>
+                {/* 1行目: 時間 と 得点タグ/ゴミ箱 */}
+                <div className="event-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="event-time" style={{ fontFamily: 'monospace', fontWeight: 'bold', color: '#00e5ff' }}>{formatTime(event.timestamp)}</span>
+                    <span className={`event-tag tag-${type}`} style={{
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      backgroundColor: type === 'point' ? 'rgba(0, 229, 255, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                      color: type === 'point' ? '#00e5ff' : 'rgba(255, 255, 255, 0.6)'
+                    }}>
                       {type === 'point' ? '得点' : type === 'serve_change' ? 'サーブ' : type === 'set_confirm' ? '確定' : type === 'overlay_toggle' ? '表示設定' : 'その他'}
                     </span>
                   </div>
@@ -80,34 +95,72 @@ export const EventList: React.FC<EventListProps> = ({
                           onEventDelete(event.timestamp)
                         }
                       }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'rgba(255, 59, 48, 0.7)',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        padding: 0
+                      }}
                     >
                       🗑️
                     </button>
                   )}
                 </div>
-                <div className="event-card-body">
-                  <div className="event-detail">{detailText}</div>
-                  <div className="event-scores-row">
-                    <div className="score-display">
-                      <span className="score-team-badge">A</span>
-                      <span className="score-num">{state.scoreA}</span>
-                      <span className="score-colon">:</span>
-                      <span className="score-num">{state.scoreB}</span>
-                      <span className="score-team-badge">B</span>
-                    </div>
-                    {state.setWinner && (
-                      <span className="set-winner-badge">
-                        セット獲得: {state.setWinner === 'A' ? 'A' : 'B'}
+
+                {/* 2行目: チームA( xx - xx ) チームB / 色分け表示 */}
+                <div className="event-card-body" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  {type === 'point' ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', flexWrap: 'wrap' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>{teamAName || 'チームA'}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.4)', margin: '0 2px' }}>(</span>
+                      
+                      {/* 得点が入った方 (Aならシアン、そうでなければ半透明白) */}
+                      <span style={{ 
+                        fontWeight: 'bold', 
+                        color: team === 'A' ? '#00e5ff' : 'rgba(255, 255, 255, 0.5)',
+                        fontSize: '13px'
+                      }}>
+                        {state.scoreA}
                       </span>
-                    )}
-                  </div>
-                  {state.setScores.length > 0 && (
-                    <div className="set-scores-history">
-                      {state.setScores.map((s, sIdx) => (
-                        <span key={sIdx} className="history-set">
-                          {s.scoreA}-{s.scoreB}
+                      
+                      <span style={{ color: 'rgba(255,255,255,0.4)' }}>-</span>
+                      
+                      {/* 得点が入った方 (Bなら赤、そうでなければ半透明白) */}
+                      <span style={{ 
+                        fontWeight: 'bold', 
+                        color: team === 'B' ? '#ff3b30' : 'rgba(255, 255, 255, 0.5)',
+                        fontSize: '13px'
+                      }}>
+                        {state.scoreB}
+                      </span>
+                      
+                      <span style={{ color: 'rgba(255,255,255,0.4)', margin: '0 2px' }}>)</span>
+                      <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>{teamBName || 'チームB'}</span>
+
+                      {/* セット獲得バッジがある場合 */}
+                      {state.setWinner && (
+                        <span style={{
+                          marginLeft: 'auto',
+                          fontSize: '10px',
+                          backgroundColor: state.setWinner === 'A' ? 'rgba(0, 229, 255, 0.2)' : 'rgba(255, 59, 48, 0.2)',
+                          color: state.setWinner === 'A' ? '#00e5ff' : '#ff3b30',
+                          padding: '1px 4px',
+                          borderRadius: '3px',
+                          fontWeight: 'bold'
+                        }}>
+                          セット獲得: {state.setWinner === 'A' ? 'A' : 'B'}
                         </span>
-                      ))}
+                      )}
+                    </div>
+                  ) : (
+                    /* 得点イベント以外 (サーブ権やリセット等) */
+                    <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>{detailText}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>
+                        ({state.scoreA} - {state.scoreB})
+                      </span>
                     </div>
                   )}
                 </div>
