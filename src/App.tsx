@@ -230,7 +230,8 @@ function App(): React.JSX.Element {
 
   // プロジェクトの保存 (上書き / 別名保存)
   const handleSaveProject = async (saveAs: boolean = false): Promise<void> => {
-    if (!projectData) return
+    // projectData が null の場合 (動画のみ読み込み状態) は、デフォルト構造で保存を続行
+    const baseProject = projectData ?? createDefaultProject(videoPath)
 
     try {
       let targetPath = jsonPath
@@ -248,7 +249,7 @@ function App(): React.JSX.Element {
 
       // 保存するデータ構造を整理 (現在の動画絶対パス、イン点/アウト点、エクスポート設定、書き出しプリセットを格納)
       const dataToSave: ProjectData = {
-        ...projectData,
+        ...baseProject,
         videoPath: videoPath,
         inPoint: inPoint,
         outPoint: outPoint,
@@ -271,6 +272,7 @@ function App(): React.JSX.Element {
         content: JSON.stringify(dataToSave, null, 2)
       })
       setJsonPath(targetPath)
+      setProjectData(dataToSave)
       alert('プロジェクトを保存しました！')
     } catch (err: any) {
       console.error('Save failed:', err)
@@ -299,10 +301,12 @@ function App(): React.JSX.Element {
 
   // プリセットデータの自動保存
   const autoSavePresets = async (updatedPresets: ExportPreset[]) => {
-    if (!projectData || !jsonPath) return
+    if (!jsonPath) return  // 保存先パスがなければ何もできない
+    // projectData が null の場合 (動画のみ読み込み状態) はデフォルト構造で保存
+    const baseProject = projectData ?? createDefaultProject(videoPath)
     try {
       const dataToSave: ProjectData = {
-        ...projectData,
+        ...baseProject,
         videoPath: videoPath,
         inPoint: inPoint,
         outPoint: outPoint,
@@ -332,7 +336,19 @@ function App(): React.JSX.Element {
   }
 
   // プリセットの新規追加
-  const addNewPreset = (name: string) => {
+  const addNewPreset = async (name: string) => {
+    // jsonPath がない場合はまずプロジェクトの保存先を指定させる
+    let targetPath = jsonPath
+    if (!targetPath) {
+      const selected = await save({
+        filters: [{ name: 'Project JSON', extensions: ['json'] }],
+        defaultPath: 'match_project.json'
+      })
+      if (!selected) return
+      targetPath = selected
+      setJsonPath(targetPath)
+    }
+
     const newPreset: ExportPreset = {
       id: Date.now().toString(),
       name: name,
@@ -354,17 +370,20 @@ function App(): React.JSX.Element {
     setExportPresets(updated)
     setActivePresetId(newPreset.id)
     
-    if (projectData) {
-      setProjectData({
-        ...projectData,
-        exportPresets: updated
-      })
-      autoSavePresets(updated)
+    const baseProject = projectData ?? createDefaultProject(videoPath)
+    const dataToSave: ProjectData = { ...baseProject, videoPath, inPoint, outPoint, exportPresets: updated }
+    setProjectData(dataToSave)
+    
+    try {
+      await invoke('save_project_json', { path: targetPath, content: JSON.stringify(dataToSave, null, 2) })
+      console.log('[AutoSave] Preset added and saved.')
+    } catch (err) {
+      console.error('[AutoSave] Failed:', err)
     }
   }
 
-  // 現在の設定で既存 of プリセットを上書き
-  const updatePreset = (id: string) => {
+  // 現在の設定で既存のプリセットを上書き
+  const updatePreset = async (id: string) => {
     const updated = exportPresets.map(p => {
       if (p.id === id) {
         return {
@@ -387,14 +406,7 @@ function App(): React.JSX.Element {
       return p
     })
     setExportPresets(updated)
-    
-    if (projectData) {
-      setProjectData({
-        ...projectData,
-        exportPresets: updated
-      })
-      autoSavePresets(updated)
-    }
+    autoSavePresets(updated)
   }
 
   // プリセットの削除
@@ -404,14 +416,7 @@ function App(): React.JSX.Element {
     if (activePresetId === id) {
       setActivePresetId(null)
     }
-    
-    if (projectData) {
-      setProjectData({
-        ...projectData,
-        exportPresets: updated
-      })
-      autoSavePresets(updated)
-    }
+    autoSavePresets(updated)
   }
 
   // タイムアウトイベントの追加
