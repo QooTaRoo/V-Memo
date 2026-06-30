@@ -41,7 +41,8 @@ export function drawScoreboardToCanvas(
   settings: MatchSettings,
   time: number,
   isColorkeyActive: boolean = false,
-  swapTeams: boolean = false
+  swapTeams: boolean = false,
+  drawText: boolean = true
 ) {
   const { teamAName, teamBName, overlaySize, overlayPosition } = settings
   const { scoreA, scoreB, setsA, setsB, servingTeam, setScores } = state
@@ -145,10 +146,10 @@ export function drawScoreboardToCanvas(
     const secondSets = swapTeams ? setsA : setsB
     const secondServing = swapTeams ? (servingTeam === 'A') : (servingTeam === 'B')
 
-    drawTeamRow(ctx, fbTeamAreaY, firstTeamName, firstScore, firstSets, fbTotalSetDots, firstServing, fbStartX, fbBoardWidth, time, fbScale)
-    drawTeamRow(ctx, fbTeamAreaY + fbRowHeight + 8 * fbScale, secondTeamName, secondScore, secondSets, fbTotalSetDots, secondServing, fbStartX, fbBoardWidth, time, fbScale)
+    drawTeamRow(ctx, fbTeamAreaY, firstTeamName, firstScore, firstSets, fbTotalSetDots, firstServing, fbStartX, fbBoardWidth, time, fbScale, drawText)
+    drawTeamRow(ctx, fbTeamAreaY + fbRowHeight + 8 * fbScale, secondTeamName, secondScore, secondSets, fbTotalSetDots, secondServing, fbStartX, fbBoardWidth, time, fbScale, drawText)
 
-    if (hasPastScores) {
+    if (hasPastScores && drawText) {
       const fbPastY = fbStartY + 112 * fbScale
       ctx.beginPath()
       ctx.moveTo(fbStartX + 18 * fbScale, fbPastY)
@@ -228,11 +229,11 @@ export function drawScoreboardToCanvas(
   const secondSets = swapTeams ? setsA : setsB
   const secondServing = swapTeams ? (servingTeam === 'A') : (servingTeam === 'B')
 
-  drawTeamRow(offCtx, teamAreaY, firstTeamName, firstScore, firstSets, totalSetDots, firstServing, startX, boardWidth, time, scale)
-  drawTeamRow(offCtx, teamAreaY + rowHeight + 8 * scale, secondTeamName, secondScore, secondSets, totalSetDots, secondServing, startX, boardWidth, time, scale)
+  drawTeamRow(offCtx, teamAreaY, firstTeamName, firstScore, firstSets, totalSetDots, firstServing, startX, boardWidth, time, scale, drawText)
+  drawTeamRow(offCtx, teamAreaY + rowHeight + 8 * scale, secondTeamName, secondScore, secondSets, totalSetDots, secondServing, startX, boardWidth, time, scale, drawText)
 
   // 3. 過去セットのスコア履歴 (past-set-scores)
-  if (hasPastScores) {
+  if (hasPastScores && drawText) {
     const pastY = startY + 112 * scale
     // 分割線
     offCtx.beginPath()
@@ -295,7 +296,8 @@ function drawTeamRow(
   startX: number,
   boardWidth: number,
   time: number,
-  scale: number
+  scale: number,
+  drawText: boolean = true
 ) {
   const rowHeight = 42 * scale
   const centerY = y + rowHeight / 2
@@ -303,7 +305,7 @@ function drawTeamRow(
   ctx.save()
 
   // 1. サーブ権表示
-  if (isServing) {
+  if (isServing && drawText) {
     const phase = ((time % 2.0) / 2.0) * 2.0 * Math.PI
     const pulseScale = 1.0 + 0.075 * (1.0 - Math.cos(phase))
     const rotation = 7.5 * (1.0 - Math.cos(phase)) * (Math.PI / 180)
@@ -323,35 +325,39 @@ function drawTeamRow(
     ctx.restore()
   }
 
-  // 2. チーム名の描画 (ウェイトを 600 から 500 に下げて潰れを防止、サイズを 18px から 19px に微増させてシャープに)
-  ctx.font = `500 ${Math.round(19 * scale)}px "SF Pro", "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif`
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'middle'
-  const teamNameX = startX + (18 + 20 + 10) * scale
-  
-  const maxNameWidth = 140 * scale
-  let displayName = name
-  if (ctx.measureText(name).width > maxNameWidth) {
-    while (ctx.measureText(displayName + '...').width > maxNameWidth && displayName.length > 0) {
-      displayName = displayName.substring(0, displayName.length - 1)
+  // 2. チーム名の描画
+  if (drawText) {
+    ctx.font = `500 ${Math.round(19 * scale)}px "SF Pro", "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif`
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    const teamNameX = startX + (18 + 20 + 10) * scale
+    
+    const maxNameWidth = 140 * scale
+    let displayName = name
+    if (ctx.measureText(name).width > maxNameWidth) {
+      while (ctx.measureText(displayName + '...').width > maxNameWidth && displayName.length > 0) {
+        displayName = displayName.substring(0, displayName.length - 1)
+      }
+      displayName += '...'
     }
-    displayName += '...'
+    ctx.fillText(displayName, teamNameX, centerY)
   }
-  ctx.fillText(displayName, teamNameX, centerY)
 
   // 3. 得点の描画 (team-score)
   const scoreX = startX + boardWidth - (18 + 32 + 12) * scale
-  ctx.font = `700 ${Math.round(32 * scale)}px "SF Pro", "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif`
-  ctx.fillStyle = '#00e5ff'
-  ctx.textAlign = 'right'
-  ctx.textBaseline = 'middle'
-  
-  ctx.save()
-  ctx.shadowColor = 'rgba(0, 229, 255, 0.3)'
-  ctx.shadowBlur = 10 * scale
-  ctx.fillText(score.toString(), scoreX, centerY)
-  ctx.restore()
+  if (drawText) {
+    ctx.font = `700 ${Math.round(32 * scale)}px "SF Pro", "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif`
+    ctx.fillStyle = '#00e5ff'
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    
+    ctx.save()
+    ctx.shadowColor = 'rgba(0, 229, 255, 0.3)'
+    ctx.shadowBlur = 10 * scale
+    ctx.fillText(score.toString(), scoreX, centerY)
+    ctx.restore()
+  }
 
   // 4. セットドット (team-sets)
   const dotRadius = 3.5 * scale
@@ -359,7 +365,7 @@ function drawTeamRow(
   const startDotX = scoreX + 8 * scale
 
   for (let i = 0; i < totalSetDots; i++) {
-    const isFilled = i < sets
+    const isFilled = drawText && (i < sets)
     const dotX = startDotX + i * (dotRadius * 2 + dotGap) + dotRadius
     
     ctx.save()

@@ -20,6 +20,8 @@ import {
   ScoreEvent
 } from './utils/scoreEngine'
 import { exportTransparentWebm } from './utils/videoExporter'
+import { generateFcpXml } from './utils/fcpxmlGenerator'
+import { drawScoreboardToCanvas } from './utils/scoreboardCanvas'
 
 // デフォルトの新規プロジェクトテンプレート
 const createDefaultProject = (videoPath: string | null = null): ProjectData => ({
@@ -85,7 +87,7 @@ function App(): React.JSX.Element {
   const [isExporting, setIsExporting] = useState<boolean>(false)
   const [exportStatusText, setExportStatusText] = useState<string>('')
   const [exportRangeMode, setExportRangeMode] = useState<'all' | 'inout'>('all')
-  const [exportType, setExportType] = useState<'normal' | 'transparent'>('normal')
+  const [exportType, setExportType] = useState<'normal' | 'transparent' | 'fcpxml'>('normal')
   const [exportPresets, setExportPresets] = useState<ExportPreset[]>([])
   const [activePresetId, setActivePresetId] = useState<string | null>(null)
   const [newPresetName, setNewPresetName] = useState<string>('')
@@ -1034,6 +1036,97 @@ function App(): React.JSX.Element {
   const handleExport = async (): Promise<void> => {
     if (!videoPath || !projectData) return
 
+    // 1. FCPXML (DaVinci Resolve用) エクスポートの処理
+    if (exportType === 'fcpxml') {
+      try {
+        const outputXmlPath = await save({
+          title: 'DaVinci Resolve用 FCPXML の保存先',
+          defaultPath: `${videoName.replace(/\.[^/.]+$/, '')}_timeline.fcpxml`,
+          filters: [{
+            name: 'FCPXML Timeline',
+            extensions: ['fcpxml']
+          }]
+        })
+
+        if (!outputXmlPath || typeof outputXmlPath !== 'string') {
+          return
+        }
+
+        setIsExporting(true)
+        setExportProgress(0)
+        setExportStatusText('ビデオメタデータの取得中...')
+
+        // ビデオメタデータの取得
+        const metadata = await invoke<any>('get_video_metadata', { path: videoPath })
+
+        setExportStatusText('透過背景画像を生成中...')
+        setExportProgress(20)
+
+        const width = metadata.width || 1920
+        const height = metadata.height || 1080
+        
+        // 透過背景PNGの描画
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.clearRect(0, 0, width, height)
+          const activeState = getActiveEventState(projectData.events, 0)
+          drawScoreboardToCanvas(ctx, width, height, activeState, scoreboardSettings, 0, false, swapTeams, false) // drawText = false
+        }
+
+        // PNGへの変換
+        const dataUrl = canvas.toDataURL('image/png')
+        const base64Data = dataUrl.split(',')[1]
+        const binaryString = atob(base64Data)
+        const len = binaryString.length
+        const bytes = new Uint8Array(len)
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i)
+        }
+
+        // PNGファイルの書き出し先決定 (FCPXMLと同じディレクトリに _bg.png を出力)
+        const pngSavePath = outputXmlPath.replace(/\.fcpxml$/i, '_bg.png')
+        await invoke('save_binary_file', { path: pngSavePath, data: Array.from(bytes) })
+
+        setExportStatusText('FCPXMLタイムラインを生成中...')
+        setExportProgress(60)
+
+        // FCPXML生成
+        const inPt = exportRangeMode === 'all' ? 0 : (inPoint !== null ? inPoint : 0)
+        const outPt = exportRangeMode === 'all' ? duration : (outPoint !== null ? outPoint : duration)
+
+        const xmlContent = generateFcpXml(
+          metadata,
+          projectData.events,
+          scoreboardSettings,
+          inPt,
+          outPt,
+          pngSavePath,
+          videoPath
+        )
+
+        // FCPXMLファイルの書き出し
+        await invoke('save_project_json', { path: outputXmlPath, content: xmlContent })
+
+        setExportProgress(100)
+        setExportStatusText('エクスポート完了！')
+        
+        alert(
+          `エクスポートが完了しました！\n\n・タイムラインファイル: ${outputXmlPath.split(/[/\\]/).pop()}\n・背景画像: ${pngSavePath.split(/[/\\]/).pop()}\n\nDaVinci Resolve等の編集ソフトを起動し、「ファイル ➔ インポート ➔ タイムライン...」からこの FCPXML ファイルを読み込んでください。`
+        )
+      } catch (err: any) {
+        console.error('[Export] FCPXML export failed:', err)
+        alert('FCPXMLエクスポートに失敗しました:\n' + err.message)
+      } finally {
+        setIsExporting(false)
+        setIsExportModalOpen(false)
+      }
+      return
+    }
+
+    // 2. 通常動画および透過動画エクスポートの処理
     try {
       // 保存先ファイルの選択
       const isTransparent = exportType === 'transparent'
@@ -2010,7 +2103,7 @@ function App(): React.JSX.Element {
                 {/* 2. 出力モードの選択 */}
                 <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
                   <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>2. 出力モード</h4>
-                  <div style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '8px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
                       <input 
                         type="radio" 
@@ -2030,6 +2123,16 @@ function App(): React.JSX.Element {
                         onChange={() => setExportType('transparent')} 
                       />
                       得点板のみ出力 (透過MOV/他編集ソフト用)
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                      <input 
+                        type="radio" 
+                        name="exportType" 
+                        value="fcpxml" 
+                        checked={exportType === 'fcpxml'} 
+                        onChange={() => setExportType('fcpxml')} 
+                      />
+                      DaVinci Resolve用出力 (FCPXML + 透過背景画像)
                     </label>
                   </div>
                 </div>

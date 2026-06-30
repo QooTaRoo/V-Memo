@@ -58,7 +58,7 @@ export interface ExportPreset {
     matchCard?: string;
     datePlace?: string;
     titleDuration?: number | '';
-    exportType?: 'normal' | 'transparent';
+    exportType?: 'normal' | 'transparent' | 'fcpxml';
     rangeMode?: 'all' | 'inout';
   };
 }
@@ -78,7 +78,7 @@ export interface ProjectData {
     matchCard?: string;
     datePlace?: string;
     titleDuration?: number | '';
-    exportType?: 'normal' | 'transparent';
+    exportType?: 'normal' | 'transparent' | 'fcpxml';
     rangeMode?: 'all' | 'inout';
   };
   exportPresets?: ExportPreset[];

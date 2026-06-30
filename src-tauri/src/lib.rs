@@ -239,6 +239,14 @@ fn save_project_json(path: String, content: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn save_binary_file(path: String, data: Vec<u8>) -> Result<(), String> {
+    use std::io::Write;
+    let mut file = File::create(path).map_err(|e| e.to_string())?;
+    file.write_all(&data).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 fn load_project_json(path: String) -> Result<String, String> {
     let mut file = File::open(path).map_err(|e| e.to_string())?;
     let mut content = String::new();
@@ -713,6 +721,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_media_port,
             save_project_json,
+            save_binary_file,
             load_project_json,
             check_file_exists,
             get_video_metadata,
