@@ -1335,7 +1335,7 @@ html, body {
   flex: 1;
   min-height: 0;
   height: auto !important; /* override height: 100% */
-  border-left: none !important; /* remove border as events-sidebar handles it */
+  margin: 12px 16px 16px 16px;
 }
 
 /* スコア推移グラフ領域のスタイル */
