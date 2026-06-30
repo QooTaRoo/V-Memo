@@ -105,11 +105,11 @@ export const ScoreProgressionGraph: React.FC<ScoreProgressionGraphProps> = ({
   }
 
   const summary = getSummaryScore()
-  const teamAName = projectData?.matchSettings.teamAName || '大宮東'
-  const teamBName = projectData?.matchSettings.teamBName || '三浦学苑'
+  const teamAName = projectData?.matchSettings.teamAName || 'チームA'
+  const teamBName = projectData?.matchSettings.teamBName || 'チームB'
 
-  const colorA = projectData?.matchSettings.teamAColor || '#ff9100'
-  const colorB = projectData?.matchSettings.teamBColor || '#f50057'
+  const colorA = projectData?.matchSettings.teamAColor || '#ffffff'
+  const colorB = projectData?.matchSettings.teamBColor || '#ffffff'
 
   // 表示順（swapTeams）を考慮したチーム情報と色
   const topTeamName = swapTeams ? teamBName : teamAName

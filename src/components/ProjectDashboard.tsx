@@ -20,8 +20,8 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ onProjectLoa
   const [activeTab, setActiveTab] = useState<'recents' | 'new-project'>('recents')
   
   // 新規プロジェクトフォームの状態
-  const [teamAName, setTeamAName] = useState('大宮東')
-  const [teamBName, setTeamBName] = useState('伊奈学園')
+  const [teamAName, setTeamAName] = useState('')
+  const [teamBName, setTeamBName] = useState('')
   const [maxSets, setMaxSets] = useState<number>(3)
   const [normalPoints, setNormalPoints] = useState<number>(25)
   const [finalPoints, setFinalPoints] = useState<number>(25)
@@ -182,8 +182,8 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ onProjectLoa
         theme: 'modern-dark',
         overlaySize: 100,
         overlayPosition: 'top-left' as const,
-        teamAColor: '#ff9100',
-        teamBColor: '#f50057',
+        teamAColor: '#ffffff',
+        teamBColor: '#ffffff',
         workspaceTheme: 'dark' as const
       }
 
@@ -331,7 +331,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ onProjectLoa
                         type="text" 
                         value={teamAName} 
                         onChange={(e) => setTeamAName(e.target.value)} 
-                        placeholder="例: 大宮東"
+                        placeholder="例: チームA"
                       />
                     </div>
                     <div className="form-group">
@@ -340,7 +340,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ onProjectLoa
                         type="text" 
                         value={teamBName} 
                         onChange={(e) => setTeamBName(e.target.value)} 
-                        placeholder="例: 伊奈学園"
+                        placeholder="例: チームB"
                       />
                     </div>
                   </div>

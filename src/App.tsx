@@ -24,16 +24,16 @@ import { exportTransparentWebm } from './utils/videoExporter'
 // デフォルトの新規プロジェクトテンプレート
 const createDefaultProject = (videoPath: string | null = null): ProjectData => ({
   matchSettings: {
-    teamAName: '大宮東',
-    teamBName: '伊奈学園',
+    teamAName: '',
+    teamBName: '',
     maxSets: 3,
     normalSetPoints: 25,
     finalSetPoints: 25,
     theme: 'modern-dark',
     overlaySize: 100,
     overlayPosition: 'top-left',
-    teamAColor: '#ff9100',
-    teamBColor: '#f50057',
+    teamAColor: '#ffffff',
+    teamBColor: '#ffffff',
     workspaceTheme: 'dark'
   },
   events: [
@@ -2241,12 +2241,12 @@ function App(): React.JSX.Element {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <input 
                       type="color" 
-                      value={scoreboardSettings.teamAColor || '#ff9100'} 
+                      value={scoreboardSettings.teamAColor || '#ffffff'} 
                       onChange={(e) => handleSettingChange('teamAColor', e.target.value)}
                       style={{ width: '40px', height: '36px', padding: 0, border: '1px solid var(--border-input)', borderRadius: '6px', cursor: 'pointer', background: 'none' }}
                     />
                     <span style={{ fontSize: '13px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
-                      {scoreboardSettings.teamAColor || '#ff9100'}
+                      {scoreboardSettings.teamAColor || '#ffffff'}
                     </span>
                   </div>
                 </div>
@@ -2255,12 +2255,12 @@ function App(): React.JSX.Element {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <input 
                       type="color" 
-                      value={scoreboardSettings.teamBColor || '#f50057'} 
+                      value={scoreboardSettings.teamBColor || '#ffffff'} 
                       onChange={(e) => handleSettingChange('teamBColor', e.target.value)}
                       style={{ width: '40px', height: '36px', padding: 0, border: '1px solid var(--border-input)', borderRadius: '6px', cursor: 'pointer', background: 'none' }}
                     />
                     <span style={{ fontSize: '13px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
-                      {scoreboardSettings.teamBColor || '#f50057'}
+                      {scoreboardSettings.teamBColor || '#ffffff'}
                     </span>
                   </div>
                 </div>

@@ -20,8 +20,8 @@ export const ScoreboardOverlay: React.FC<ScoreboardOverlayProps> = ({ state, set
   }
 
   const totalSetDots = Math.ceil(settings.maxSets / 2)
-  const colorA = settings.teamAColor || '#ff9100'
-  const colorB = settings.teamBColor || '#f50057'
+  const colorA = settings.teamAColor || '#ffffff'
+  const colorB = settings.teamBColor || '#ffffff'
 
   const teamARow = (
     <div className="team-row" key="teamA">

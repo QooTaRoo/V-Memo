@@ -27,8 +27,8 @@ export const EventList: React.FC<EventListProps> = ({
   onEventDelete,
   teamAName,
   teamBName,
-  teamAColor = '#ff9100',
-  teamBColor = '#f50057'
+  teamAColor = '#ffffff',
+  teamBColor = '#ffffff'
 }) => {
   return (
     <div className="event-list-container">
