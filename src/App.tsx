@@ -1093,85 +1093,30 @@ function App(): React.JSX.Element {
           <button 
             className="menu-btn" 
             onClick={handleSelectVideo}
-            style={{
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: '600',
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: '#e2e2e7',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
           >
             🎬 動画を変更
           </button>
           <button 
             className="menu-btn" 
             onClick={() => handleSaveProject(false)}
-            style={{
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: '600',
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: '#e2e2e7',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
           >
             💾 上書き保存
           </button>
           <button 
             className="menu-btn" 
             onClick={() => handleSaveProject(true)}
-            style={{
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: '600',
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: '#e2e2e7',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
           >
             📝 別名保存...
           </button>
           <button 
             className="menu-btn" 
             onClick={() => setIsMatchSettingsModalOpen(true)}
-            style={{
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: '600',
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: '#e2e2e7',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
           >
             ⚙️ 試合設定...
           </button>
           <button 
             className="menu-btn" 
             onClick={() => setIsDisplaySettingsModalOpen(true)}
-            style={{
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: '600',
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: '#e2e2e7',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
           >
             🎨 表示設定...
           </button>
@@ -1183,9 +1128,9 @@ function App(): React.JSX.Element {
               padding: '6px 12px',
               fontSize: '12px',
               fontWeight: '700',
-              backgroundColor: videoPath ? '#00e5ff' : 'rgba(255,255,255,0.02)',
+              backgroundColor: videoPath ? '#00e5ff' : 'var(--bg-input)',
               border: 'none',
-              color: videoPath ? '#08080a' : 'rgba(255,255,255,0.2)',
+              color: videoPath ? '#08080a' : 'var(--text-muted)',
               borderRadius: '5px',
               cursor: videoPath ? 'pointer' : 'not-allowed',
               transition: 'all 0.2s'
@@ -1193,7 +1138,7 @@ function App(): React.JSX.Element {
           >
             📤 動画のエクスポート...
           </button>
-          <span style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '16px', margin: '0 4px' }} />
+          <span style={{ borderLeft: '1px solid var(--border-color)', height: '16px', margin: '0 4px' }} />
           <button 
             className="menu-btn menu-btn-danger" 
             onClick={handleCloseProject}
@@ -1686,7 +1631,7 @@ function App(): React.JSX.Element {
 
               {/* 音量 */}
               <div className="control-item volume-control" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <button className="btn-mute" onClick={toggleMute} disabled={!videoPath} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '14px', padding: 0 }}>
+                <button className="btn-mute" onClick={toggleMute} disabled={!videoPath} style={{ background: 'none', border: 'none', color: 'var(--text-main)', cursor: 'pointer', fontSize: '14px', padding: 0 }}>
                   {isMuted ? '🔇' : '🔊'}
                 </button>
                 <input
@@ -1708,12 +1653,14 @@ function App(): React.JSX.Element {
             <div className="presets-container" style={{
               marginTop: '10px',
               padding: '10px 12px',
-              background: '#121214',
+              background: 'var(--bg-panel-translucent)',
               borderRadius: '8px',
-              border: '1px solid rgba(255, 255, 255, 0.05)'
+              border: '1px solid var(--border-color)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', gap: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'rgba(255,255,255,0.7)', flexShrink: 0 }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-main)', flexShrink: 0 }}>
                   📂 切り出し範囲プリセット
                 </span>
                 <div style={{ display: 'flex', gap: '4px', flex: 1, justifyContent: 'flex-end' }}>
@@ -1727,10 +1674,10 @@ function App(): React.JSX.Element {
                       maxWidth: '160px',
                       padding: '3px 8px',
                       fontSize: '11px',
-                      background: '#1a1a1e',
-                      border: '1px solid rgba(255,255,255,0.15)',
+                      background: 'var(--bg-input)',
+                      border: '1px solid var(--border-input)',
                       borderRadius: '4px',
-                      color: 'white',
+                      color: 'var(--text-main)',
                       outline: 'none'
                     }}
                   />
@@ -1745,9 +1692,9 @@ function App(): React.JSX.Element {
                     style={{
                       padding: '3px 10px',
                       fontSize: '11px',
-                      backgroundColor: newPresetName.trim() ? 'rgba(0, 229, 255, 0.15)' : 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(0, 229, 255, 0.3)',
-                      color: newPresetName.trim() ? '#00e5ff' : 'rgba(255,255,255,0.3)',
+                      backgroundColor: newPresetName.trim() ? 'rgba(0, 229, 255, 0.15)' : 'var(--bg-input)',
+                      border: newPresetName.trim() ? '1px solid rgba(0, 229, 255, 0.3)' : '1px solid var(--border-input)',
+                      color: newPresetName.trim() ? '#00e5ff' : 'var(--text-muted)',
                       borderRadius: '4px',
                       cursor: newPresetName.trim() ? 'pointer' : 'default',
                       fontWeight: 'bold',
@@ -1760,7 +1707,7 @@ function App(): React.JSX.Element {
               </div>
 
               {exportPresets.length === 0 ? (
-                <p style={{ margin: 0, fontSize: '11px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '6px 0' }}>
+                <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', padding: '6px 0' }}>
                   登録されたプリセットはありません。範囲(イン/アウト点)を設定して追加してください。
                 </p>
               ) : (
@@ -1773,8 +1720,8 @@ function App(): React.JSX.Element {
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          backgroundColor: isActive ? 'rgba(0, 229, 255, 0.15)' : 'rgba(255,255,255,0.03)',
-                          border: isActive ? '1px solid #00e5ff' : '1px solid rgba(255,255,255,0.08)',
+                          backgroundColor: isActive ? 'rgba(0, 229, 255, 0.15)' : 'var(--bg-input)',
+                          border: isActive ? '1px solid #00e5ff' : '1px solid var(--border-card)',
                           borderRadius: '4px',
                           padding: '2px 2px 2px 8px',
                           gap: '6px'
@@ -1784,7 +1731,7 @@ function App(): React.JSX.Element {
                           onClick={() => applyPreset(preset)}
                           style={{
                             fontSize: '11px',
-                            color: isActive ? '#00e5ff' : 'white',
+                            color: isActive ? '#00e5ff' : 'var(--text-main)',
                             cursor: 'pointer',
                             fontWeight: isActive ? 'bold' : 'normal'
                           }}
@@ -1799,7 +1746,7 @@ function App(): React.JSX.Element {
                             style={{
                               background: 'none',
                               border: 'none',
-                              color: 'rgba(255,255,255,0.4)',
+                              color: 'var(--text-muted)',
                               cursor: 'pointer',
                               fontSize: '10px',
                               padding: '2px',
