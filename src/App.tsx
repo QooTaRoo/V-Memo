@@ -145,18 +145,19 @@ function App(): React.JSX.Element {
   }, [videoPath, projectData])
 
 
-  // 音声フォーマット（MP3 in MP4等）の自動修復チェック
+  // 音声形式（MP3 in MP4等）の自動変換チェック
   const checkAndFixVideoAudio = async (path: string): Promise<string> => {
     try {
       const metadata = await invoke<any>('get_video_metadata', { path })
-      console.log('[AudioFix] Loaded video metadata:', metadata)
+      console.log('[AudioConvert] Loaded video metadata:', metadata)
+      alert(`[DEBUG] metadata: ${JSON.stringify(metadata)}`)
       
       const hasAudio = metadata.hasAudio ?? metadata.has_audio
       const codec = (metadata.audioCodec ?? metadata.audio_codec)?.toLowerCase() || ''
       
       if (hasAudio && (codec === 'mp3' || codec.includes('mp3'))) {
         const fix = window.confirm(
-          `⚠️ この動画は音声がMP3形式であるため、V-Memo（Webブラウザ）で再生したときに音が出ない可能性があります。\n\n動画データをコピーし、音声部分を標準のAAC形式へ自動変換（修復）して読み込みますか？\n(数秒で完了します。)`
+          `⚠️ この動画は音声がMP3形式であるため、V-Memo（Webブラウザ）で再生したときに音が出ない可能性があります。\n\nブラウザ対応の標準形式（AAC）に変換した動画ファイルを新しく作成して、それを読み込みますか？\n（変換は数秒で完了し、元の動画ファイルはそのまま残ります）`
         )
         if (fix) {
           // デフォルトの出力ファイル名を生成
@@ -179,16 +180,16 @@ function App(): React.JSX.Element {
 
           if (savePath && typeof savePath === 'string') {
             setIsRepairing(true)
-            setRepairStatusText('音声フォーマットを変換（修復）中...')
+            setRepairStatusText('音声形式を変換中...')
             try {
-              console.log('[AudioFix] Starting format conversion for:', path, '->', savePath)
+              console.log('[AudioConvert] Starting format conversion for:', path, '->', savePath)
               const fixedPath = await invoke<string>('fix_video_audio', { inputPath: path, outputPath: savePath })
-              console.log('[AudioFix] Conversion complete:', fixedPath)
-              alert(`音声フォーマットの修復が完了しました！\n変換後の動画「${fixedPath.split(/[/\\]/).pop()}」を読み込みます。`)
+              console.log('[AudioConvert] Conversion complete:', fixedPath)
+              alert(`音声形式の変換が完了しました！\n変換後の動画「${fixedPath.split(/[/\\]/).pop()}」を読み込みます。`)
               return fixedPath
             } catch (err: any) {
-              console.error('[AudioFix] Conversion error:', err)
-              alert(`音声フォーマットの変換中にエラーが発生しました:\n${err.message || err}`)
+              console.error('[AudioConvert] Conversion error:', err)
+              alert(`音声形式の変換中にエラーが発生しました:\n${err.message || err}`)
             } finally {
               setIsRepairing(false)
             }
@@ -2463,7 +2464,7 @@ function App(): React.JSX.Element {
         </div>
       )}
 
-      {/* 音声修復ローディングオーバーレイ */}
+      {/* 音声変換ローディングオーバーレイ */}
       {isRepairing && (
         <div 
           className="modal-backdrop"
