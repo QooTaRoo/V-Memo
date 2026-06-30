@@ -179,7 +179,7 @@ function App(): React.JSX.Element {
             setRepairStatusText('音声フォーマットを変換（修復）中...')
             try {
               console.log('[AudioFix] Starting format conversion for:', path, '->', savePath)
-              const fixedPath = await invoke<string>('fix_video_audio', { input_path: path, output_path: savePath })
+              const fixedPath = await invoke<string>('fix_video_audio', { inputPath: path, outputPath: savePath })
               console.log('[AudioFix] Conversion complete:', fixedPath)
               alert(`音声フォーマットの修復が完了しました！\n変換後の動画「${fixedPath.split(/[/\\]/).pop()}」を読み込みます。`)
               return fixedPath
