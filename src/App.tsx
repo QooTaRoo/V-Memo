@@ -93,6 +93,8 @@ function App(): React.JSX.Element {
   const [swapTeams, setSwapTeams] = useState<boolean>(false)
   const [mediaPort, setMediaPort] = useState<number | null>(null)
   const [videoScaleFactor, setVideoScaleFactor] = useState<number>(1.0)
+  const [isRepairing, setIsRepairing] = useState<boolean>(false)
+  const [repairStatusText, setRepairStatusText] = useState<string>('')
 
 
   // 試合設定数値入力の一時ローカル状態 (空文字入力を許容するため)
@@ -173,18 +175,28 @@ function App(): React.JSX.Element {
           });
 
           if (savePath && typeof savePath === 'string') {
-            console.log('[AudioFix] Starting format conversion for:', path, '->', savePath)
-            const fixedPath = await invoke<string>('fix_video_audio', { input_path: path, output_path: savePath })
-            console.log('[AudioFix] Conversion complete:', fixedPath)
-            alert(`音声フォーマットの修復が完了しました！\n変換後の動画「${fixedPath.split(/[/\\]/).pop()}」を読み込みます。`)
-            return fixedPath
+            setIsRepairing(true)
+            setRepairStatusText('音声フォーマットを変換（修復）中...')
+            try {
+              console.log('[AudioFix] Starting format conversion for:', path, '->', savePath)
+              const fixedPath = await invoke<string>('fix_video_audio', { input_path: path, output_path: savePath })
+              console.log('[AudioFix] Conversion complete:', fixedPath)
+              alert(`音声フォーマットの修復が完了しました！\n変換後の動画「${fixedPath.split(/[/\\]/).pop()}」を読み込みます。`)
+              return fixedPath
+            } catch (err: any) {
+              console.error('[AudioFix] Conversion error:', err)
+              alert(`音声フォーマットの変換中にエラーが発生しました:\n${err.message || err}`)
+            } finally {
+              setIsRepairing(false)
+            }
           } else {
             console.log('[AudioFix] Save dialog cancelled, loading original video path.')
           }
         }
       }
-    } catch (err) {
-      console.error('[AudioFix] Check or conversion failed:', err)
+    } catch (err: any) {
+      console.error('[AudioFix] Check failed:', err)
+      alert(`動画音声のチェック中にエラーが発生しました:\n${err.message || err}`)
     }
     return path
   }
@@ -2445,6 +2457,44 @@ function App(): React.JSX.Element {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 音声修復ローディングオーバーレイ */}
+      {isRepairing && (
+        <div 
+          className="modal-backdrop"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            color: 'white',
+            gap: '16px'
+          }}
+        >
+          <div className="spinner" style={{
+            width: '48px',
+            height: '48px',
+            border: '4px solid rgba(255, 255, 255, 0.1)',
+            borderTop: '4px solid #00e5ff',
+            borderRadius: '50%',
+            animation: 'spin-loading 1s linear infinite'
+          }}></div>
+          <style>{`
+            @keyframes spin-loading {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+          <div style={{ fontSize: '16px', fontWeight: 'bold', letterSpacing: '0.5px' }}>{repairStatusText}</div>
         </div>
       )}
     </div>
