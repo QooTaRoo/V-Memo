@@ -95,6 +95,8 @@ function App(): React.JSX.Element {
   const [videoScaleFactor, setVideoScaleFactor] = useState<number>(1.0)
   const [isRepairing, setIsRepairing] = useState<boolean>(false)
   const [repairStatusText, setRepairStatusText] = useState<string>('')
+  const [showConvertConfirm, setShowConvertConfirm] = useState<string | null>(null)
+  const convertResolverRef = useRef<((choice: 'convert' | 'skip') => void) | null>(null)
 
 
   // 試合設定数値入力の一時ローカル状態 (空文字入力を許容するため)
@@ -150,56 +152,60 @@ function App(): React.JSX.Element {
     try {
       const metadata = await invoke<any>('get_video_metadata', { path })
       console.log('[AudioConvert] Loaded video metadata:', metadata)
-      alert(`[DEBUG] metadata: ${JSON.stringify(metadata)}`)
       
       const hasAudio = metadata.hasAudio ?? metadata.has_audio
       const codec = (metadata.audioCodec ?? metadata.audio_codec)?.toLowerCase() || ''
       
       if (hasAudio && (codec === 'mp3' || codec.includes('mp3'))) {
-        const fix = window.confirm(
-          `⚠️ この動画は音声がMP3形式であるため、V-Memo（Webブラウザ）で再生したときに音が出ない可能性があります。\n\nブラウザ対応の標準形式（AAC）に変換した動画ファイルを新しく作成して、それを読み込みますか？\n（変換は数秒で完了し、元の動画ファイルはそのまま残ります）`
-        )
-        if (fix) {
-          // デフォルトの出力ファイル名を生成
-          const parts = path.split(/[/\\]/);
-          const filename = parts.pop() || 'video.mp4';
-          const parentDir = parts.join('/');
-          const lastDot = filename.lastIndexOf('.');
-          const stem = lastDot !== -1 ? filename.substring(0, lastDot) : filename;
-          const ext = lastDot !== -1 ? filename.substring(lastDot + 1) : 'mp4';
-          const defaultDest = `${parentDir}/${stem}_fixed.${ext}`;
+        return new Promise<string>((resolve) => {
+          convertResolverRef.current = async (choice: 'convert' | 'skip') => {
+            convertResolverRef.current = null
+            setShowConvertConfirm(null)
+            
+            if (choice === 'convert') {
+              // デフォルトの出力ファイル名を生成
+              const parts = path.split(/[/\\]/);
+              const filename = parts.pop() || 'video.mp4';
+              const parentDir = parts.join('/');
+              const lastDot = filename.lastIndexOf('.');
+              const stem = lastDot !== -1 ? filename.substring(0, lastDot) : filename;
+              const ext = lastDot !== -1 ? filename.substring(lastDot + 1) : 'mp4';
+              const defaultDest = `${parentDir}/${stem}_fixed.${ext}`;
 
-          // 保存ファイル選択ダイアログを開く
-          const savePath = await save({
-            defaultPath: defaultDest,
-            filters: [{
-              name: 'Videos',
-              extensions: [ext]
-            }]
-          });
+              // 保存ファイル選択ダイアログを開く
+              const savePath = await save({
+                defaultPath: defaultDest,
+                filters: [{
+                  name: 'Videos',
+                  extensions: [ext]
+                }]
+              });
 
-          if (savePath && typeof savePath === 'string') {
-            setIsRepairing(true)
-            setRepairStatusText('音声形式を変換中...')
-            try {
-              console.log('[AudioConvert] Starting format conversion for:', path, '->', savePath)
-              const fixedPath = await invoke<string>('fix_video_audio', { inputPath: path, outputPath: savePath })
-              console.log('[AudioConvert] Conversion complete:', fixedPath)
-              alert(`音声形式の変換が完了しました！\n変換後の動画「${fixedPath.split(/[/\\]/).pop()}」を読み込みます。`)
-              return fixedPath
-            } catch (err: any) {
-              console.error('[AudioConvert] Conversion error:', err)
-              alert(`音声形式の変換中にエラーが発生しました:\n${err.message || err}`)
-            } finally {
-              setIsRepairing(false)
+              if (savePath && typeof savePath === 'string') {
+                setIsRepairing(true)
+                setRepairStatusText('音声形式を変換中...')
+                try {
+                  console.log('[AudioConvert] Starting format conversion for:', path, '->', savePath)
+                  const fixedPath = await invoke<string>('fix_video_audio', { inputPath: path, outputPath: savePath })
+                  console.log('[AudioConvert] Conversion complete:', fixedPath)
+                  alert(`音声形式の変換が完了しました！\n変換後の動画「${fixedPath.split(/[/\\]/).pop()}」を読み込みます。`)
+                  resolve(fixedPath)
+                  return
+                } catch (err: any) {
+                  console.error('[AudioConvert] Conversion error:', err)
+                  alert(`音声形式の変換中にエラーが発生しました:\n${err.message || err}`)
+                } finally {
+                  setIsRepairing(false)
+                }
+              }
             }
-          } else {
-            console.log('[AudioFix] Save dialog cancelled, loading original video path.')
+            resolve(path)
           }
-        }
+          setShowConvertConfirm(path)
+        })
       }
     } catch (err: any) {
-      console.error('[AudioFix] Check failed:', err)
+      console.error('[AudioConvert] Check failed:', err)
       alert(`動画音声のチェック中にエラーが発生しました:\n${err.message || err}`)
     }
     return path
@@ -2458,6 +2464,84 @@ function App(): React.JSX.Element {
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00e5ff'}
               >
                 適用して閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 音声形式変換の確認モーダル */}
+      {showConvertConfirm && (
+        <div 
+          className="modal-backdrop"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99998
+          }}
+        >
+          <div 
+            className="settings-modal-window"
+            style={{
+              backgroundColor: '#16161a',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '24px',
+              width: '460px',
+              maxWidth: '90%',
+              color: 'white',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}
+          >
+            <h3 style={{ margin: 0, color: '#00e5ff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              🎵 音声形式の互換性変換
+            </h3>
+            <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#e2e2e7' }}>
+              この動画は音声がMP3形式であるため、V-Memo（Webブラウザ）で再生したときに音が出ない可能性があります。
+              <br /><br />
+              ブラウザで再生可能な標準の音声形式（AAC）に変換した動画ファイルを新しく作成して、それを読み込みますか？
+              （変換は数秒で完了し、元の動画ファイルはそのまま残ります）
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
+              <button 
+                onClick={() => convertResolverRef.current?.('skip')}
+                style={{
+                  padding: '10px 16px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  color: 'white',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '13px'
+                }}
+              >
+                変換せずに開く
+              </button>
+              <button 
+                onClick={() => convertResolverRef.current?.('convert')}
+                style={{
+                  padding: '10px 20px',
+                  background: '#00e5ff',
+                  color: '#08080a',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '13px'
+                }}
+              >
+                変換して開く (推奨)
               </button>
             </div>
           </div>
