@@ -40,7 +40,8 @@ export function drawScoreboardToCanvas(
   state: EventState,
   settings: MatchSettings,
   time: number,
-  isColorkeyActive: boolean = false
+  isColorkeyActive: boolean = false,
+  swapTeams: boolean = false
 ) {
   const { teamAName, teamBName, overlaySize, overlayPosition } = settings
   const { scoreA, scoreB, setsA, setsB, servingTeam, setScores } = state
@@ -134,8 +135,18 @@ export function drawScoreboardToCanvas(
     const fbTeamAreaY = fbStartY + 14 * fbScale
     const fbTotalSetDots = Math.ceil(settings.maxSets / 2)
 
-    drawTeamRow(ctx, fbTeamAreaY, teamAName || 'TEAM A', scoreA, setsA, fbTotalSetDots, servingTeam === 'A', fbStartX, fbBoardWidth, time, fbScale)
-    drawTeamRow(ctx, fbTeamAreaY + fbRowHeight + 8 * fbScale, teamBName || 'TEAM B', scoreB, setsB, fbTotalSetDots, servingTeam === 'B', fbStartX, fbBoardWidth, time, fbScale)
+    // チーム行の描画（swapTeams に応じて上下順を入れ替え）
+    const firstTeamName = swapTeams ? (teamBName || 'TEAM B') : (teamAName || 'TEAM A')
+    const firstScore = swapTeams ? scoreB : scoreA
+    const firstSets = swapTeams ? setsB : setsA
+    const firstServing = swapTeams ? (servingTeam === 'B') : (servingTeam === 'A')
+    const secondTeamName = swapTeams ? (teamAName || 'TEAM A') : (teamBName || 'TEAM B')
+    const secondScore = swapTeams ? scoreA : scoreB
+    const secondSets = swapTeams ? setsA : setsB
+    const secondServing = swapTeams ? (servingTeam === 'A') : (servingTeam === 'B')
+
+    drawTeamRow(ctx, fbTeamAreaY, firstTeamName, firstScore, firstSets, fbTotalSetDots, firstServing, fbStartX, fbBoardWidth, time, fbScale)
+    drawTeamRow(ctx, fbTeamAreaY + fbRowHeight + 8 * fbScale, secondTeamName, secondScore, secondSets, fbTotalSetDots, secondServing, fbStartX, fbBoardWidth, time, fbScale)
 
     if (hasPastScores) {
       const fbPastY = fbStartY + 112 * fbScale
@@ -203,16 +214,22 @@ export function drawScoreboardToCanvas(
   offCtx.stroke()
   offCtx.restore()
 
-  // 2. チーム行の描画
   const rowHeight = 42 * scale
   const teamAreaY = startY + 14 * scale
   const totalSetDots = Math.ceil(settings.maxSets / 2)
 
-  // --- チームA ---
-  drawTeamRow(offCtx, teamAreaY, teamAName || 'TEAM A', scoreA, setsA, totalSetDots, servingTeam === 'A', startX, boardWidth, time, scale)
+  // --- チーム行の描画（swapTeams に応じて上下順を入れ替え）---
+  const firstTeamName = swapTeams ? (teamBName || 'TEAM B') : (teamAName || 'TEAM A')
+  const firstScore = swapTeams ? scoreB : scoreA
+  const firstSets = swapTeams ? setsB : setsA
+  const firstServing = swapTeams ? (servingTeam === 'B') : (servingTeam === 'A')
+  const secondTeamName = swapTeams ? (teamAName || 'TEAM A') : (teamBName || 'TEAM B')
+  const secondScore = swapTeams ? scoreA : scoreB
+  const secondSets = swapTeams ? setsA : setsB
+  const secondServing = swapTeams ? (servingTeam === 'A') : (servingTeam === 'B')
 
-  // --- チームB ---
-  drawTeamRow(offCtx, teamAreaY + rowHeight + 8 * scale, teamBName || 'TEAM B', scoreB, setsB, totalSetDots, servingTeam === 'B', startX, boardWidth, time, scale)
+  drawTeamRow(offCtx, teamAreaY, firstTeamName, firstScore, firstSets, totalSetDots, firstServing, startX, boardWidth, time, scale)
+  drawTeamRow(offCtx, teamAreaY + rowHeight + 8 * scale, secondTeamName, secondScore, secondSets, totalSetDots, secondServing, startX, boardWidth, time, scale)
 
   // 3. 過去セットのスコア履歴 (past-set-scores)
   if (hasPastScores) {

@@ -17,6 +17,7 @@ import { open, save } from '@tauri-apps/plugin-dialog'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { exportTransparentWebm } from './utils/videoExporter'
+import { ProjectDashboard } from './components/ProjectDashboard'
 import './App.css'
 
 // デフォルトの新規プロジェクトテンプレート
@@ -150,85 +151,119 @@ function App(): React.JSX.Element {
     }
   }
 
-  // プロジェクトJSON選択 (動画自動ロード付き)
-  const handleSelectJson = async (): Promise<void> => {
+  // 履歴更新のヘルパー
+  const updateRecentProjectInStorage = (path: string, videoPath: string | null = null) => {
     try {
-      const selected = await open({
-        multiple: false,
-        filters: [{
-          name: 'Project JSON',
-          extensions: ['json']
-        }]
-      })
-
-      if (selected && typeof selected === 'string') {
-        setJsonPath(selected)
-        const content = await invoke<string>('load_project_json', { path: selected })
-        const data = JSON.parse(content) as ProjectData
-        
-        // 状態を綺麗に再計算して適用 (データの整合性担保)
-        data.events = recalculateEventStates(data.events, data.matchSettings)
-        setProjectData(data)
-
-        // イン点・アウト点の復元
-        if (data.inPoint !== undefined) {
-          setInPoint(data.inPoint)
-        } else {
-          setInPoint(null)
-        }
-        if (data.outPoint !== undefined) {
-          setOutPoint(data.outPoint)
-        } else {
-          setOutPoint(null)
-        }
-
-        // エクスポート設定の復元
-        if (data.exportSettings) {
-          const settings = data.exportSettings
-          if (settings.resolution !== undefined) setExportResolution(settings.resolution)
-          if (settings.fade !== undefined) setExportFade(settings.fade)
-          if (settings.showTitle !== undefined) setExportTitle(settings.showTitle)
-          if (settings.eventName !== undefined) setExportEventName(settings.eventName)
-          if (settings.matchCard !== undefined) setExportMatchCard(settings.matchCard)
-          if (settings.datePlace !== undefined) setExportDatePlace(settings.datePlace)
-          if (settings.titleDuration !== undefined) setExportTitleDuration(settings.titleDuration)
-          if (settings.exportType !== undefined) setExportType(settings.exportType as any)
-          if (settings.rangeMode !== undefined) setExportRangeMode(settings.rangeMode as any)
-        }
-        
-        // プリセットの復元
-        if (data.exportPresets) {
-          setExportPresets(data.exportPresets)
-          setActivePresetId(null)
-        } else {
-          setExportPresets([])
-          setActivePresetId(null)
-        }
-        
-        const index = findActiveEventIndex(data.events, currentTime)
-        setActiveEventIndex(index)
-        setActiveState(getActiveEventState(data.events, currentTime))
-
-        // 動画の自動ロード
-        if (data.videoPath) {
-          const videoExists = await invoke<boolean>('check_file_exists', { path: data.videoPath })
-          if (videoExists) {
-            setVideoPath(data.videoPath)
-            const name = data.videoPath.split(/[/\\]/).pop() || ''
-            setVideoName(name)
-            console.log('Video auto-loaded:', data.videoPath)
-          } else {
-            alert(
-              `関連付けられた動画ファイルが見つかりませんでした。\nファイルが存在するか確認し、手動で動画を読み込んでください。\n(検索したパス: ${data.videoPath})`
-            )
-          }
-        }
+      const stored = localStorage.getItem('vmemo_recent_projects')
+      let list: any[] = stored ? JSON.parse(stored) : []
+      const fileName = path.split(/[/\\]/).pop() || 'Unset'
+      const existingIdx = list.findIndex(p => p.path === path)
+      const updatedProject = {
+        name: fileName,
+        path: path,
+        lastOpened: Date.now(),
+        videoPath: videoPath
       }
-    } catch (err: any) {
-      console.error('Error selecting JSON:', err)
-      alert('JSONの読み込みに失敗しました: ' + err.message)
+      if (existingIdx > -1) {
+        list[existingIdx] = updatedProject
+      } else {
+        list.push(updatedProject)
+      }
+      localStorage.setItem('vmemo_recent_projects', JSON.stringify(list))
+    } catch (e) {
+      console.error('Failed to update recent projects:', e)
     }
   }
+
+  // プロジェクト読み込み時の状態反映
+  const applyProjectLoadedData = async (data: ProjectData, path: string) => {
+    setJsonPath(path)
+    
+    // 状態を綺麗に再計算して適用 (データの整合性担保)
+    data.events = recalculateEventStates(data.events, data.matchSettings)
+    setProjectData(data)
+
+    // 試合設定入力の同期
+    if (data.matchSettings) {
+      setInputNormalPoints(String(data.matchSettings.normalSetPoints || 25))
+      setInputFinalPoints(String(data.matchSettings.finalSetPoints || 15))
+      setInputOverlaySize(String(data.matchSettings.overlaySize || 100))
+    }
+
+    // イン点・アウト点の復元
+    if (data.inPoint !== undefined) {
+      setInPoint(data.inPoint)
+    } else {
+      setInPoint(null)
+    }
+    if (data.outPoint !== undefined) {
+      setOutPoint(data.outPoint)
+    } else {
+      setOutPoint(null)
+    }
+
+    // エクスポート設定の復元
+    if (data.exportSettings) {
+      const settings = data.exportSettings
+      if (settings.resolution !== undefined) setExportResolution(settings.resolution)
+      if (settings.fade !== undefined) setExportFade(settings.fade)
+      if (settings.showTitle !== undefined) setExportTitle(settings.showTitle)
+      if (settings.eventName !== undefined) setExportEventName(settings.eventName)
+      if (settings.matchCard !== undefined) setExportMatchCard(settings.matchCard)
+      if (settings.datePlace !== undefined) setExportDatePlace(settings.datePlace)
+      if (settings.titleDuration !== undefined) setExportTitleDuration(settings.titleDuration)
+      if (settings.exportType !== undefined) setExportType(settings.exportType as any)
+      if (settings.rangeMode !== undefined) setExportRangeMode(settings.rangeMode as any)
+    }
+    
+    // プリセットの復元
+    if (data.exportPresets) {
+      setExportPresets(data.exportPresets)
+      setActivePresetId(null)
+    } else {
+      setExportPresets([])
+      setActivePresetId(null)
+    }
+    
+    const index = findActiveEventIndex(data.events, currentTime)
+    setActiveEventIndex(index)
+    setActiveState(getActiveEventState(data.events, currentTime))
+
+    // 動画の自動ロード
+    if (data.videoPath) {
+      const videoExists = await invoke<boolean>('check_file_exists', { path: data.videoPath })
+      if (videoExists) {
+        setVideoPath(data.videoPath)
+        const name = data.videoPath.split(/[/\\]/).pop() || ''
+        setVideoName(name)
+        console.log('Video auto-loaded:', data.videoPath)
+      } else {
+        alert(
+          `関連付けられた動画ファイルが見つかりませんでした。\nファイルが存在するか確認し、手動で動画を読み込んでください。\n(検索したパス: ${data.videoPath})`
+        )
+        setVideoPath(null)
+        setVideoName('')
+      }
+    } else {
+      setVideoPath(null)
+      setVideoName('')
+    }
+  }
+
+  // プロジェクトを閉じる処理
+  const handleCloseProject = () => {
+    setProjectData(null)
+    setJsonPath('')
+    setVideoPath(null)
+    setVideoName('')
+    setInPoint(null)
+    setOutPoint(null)
+    setCurrentTime(0)
+    setIsPlaying(false)
+    setActiveEventIndex(-1)
+    setActiveState(INITIAL_STATE)
+  }
+
 
   // プロジェクトの保存 (上書き / 別名保存)
   const handleSaveProject = async (saveAs: boolean = false): Promise<void> => {
@@ -275,6 +310,7 @@ function App(): React.JSX.Element {
       })
       setJsonPath(targetPath)
       setProjectData(dataToSave)
+      updateRecentProjectInStorage(targetPath, videoPath)
       alert('プロジェクトを保存しました！')
     } catch (err: any) {
       console.error('Save failed:', err)
@@ -982,6 +1018,10 @@ function App(): React.JSX.Element {
     handleEventClick(timestamp)
   }
 
+  if (!projectData) {
+    return <ProjectDashboard onProjectLoaded={applyProjectLoadedData} />
+  }
+
   return (
     <div className="app-container">
       {/* 左ペイン: 設定・ファイル管理 */}
@@ -992,19 +1032,48 @@ function App(): React.JSX.Element {
         </div>
 
         <div className="sidebar-section">
-          <h3>プロジェクト・メディア</h3>
-          <div className="file-buttons">
-            <button className={`btn-file ${videoPath ? 'loaded' : ''}`} onClick={handleSelectVideo}>
-              <span className="icon">📁</span>
-              {videoPath ? '動画変更' : '動画ファイル選択'}
-            </button>
-            {videoName && <div className="file-name-preview" title={videoPath || ''}>{videoName}</div>}
-
-            <button className={`btn-file ${projectData ? 'loaded' : ''}`} onClick={handleSelectJson}>
-              <span className="icon">📄</span>
-              {projectData ? 'JSON変更' : 'プロジェクトJSON選択'}
-            </button>
-            {jsonPath && <div className="file-name-preview" title={jsonPath}>{jsonPath.split(/[/\\]/).pop()}</div>}
+          <h3>プロジェクト情報</h3>
+          <div className="project-info-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+            <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.4)' }}>開いているプロジェクト:</div>
+            {jsonPath && (
+              <div 
+                className="file-name-preview" 
+                title={jsonPath}
+                style={{ 
+                  padding: '8px 12px', 
+                  background: 'rgba(255, 255, 255, 0.03)', 
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: '#fff',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
+                📄 {jsonPath.split(/[/\\]/).pop()}
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <button 
+                className={`btn-file ${videoPath ? 'loaded' : ''}`} 
+                onClick={handleSelectVideo}
+                style={{ flex: 1, padding: '8px 12px', fontSize: '12px' }}
+              >
+                🎬 {videoPath ? '動画変更' : '動画選択'}
+              </button>
+            </div>
+            {videoName && (
+              <div 
+                className="file-name-preview" 
+                title={videoPath || ''}
+                style={{ fontSize: '11px', color: '#00e5ff', paddingLeft: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              >
+                {videoName}
+              </div>
+            )}
           </div>
 
           {projectData && (
@@ -1017,6 +1086,27 @@ function App(): React.JSX.Element {
                   別名保存...
                 </button>
               </div>
+              <button 
+                className="btn-save" 
+                onClick={handleCloseProject}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  backgroundColor: 'rgba(255, 80, 80, 0.1)',
+                  color: '#ff5050',
+                  border: '1px solid rgba(255, 80, 80, 0.2)',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  transition: 'all 0.2s'
+                }}
+              >
+                🚪 プロジェクトを閉じる
+              </button>
               {videoPath && (
                 <button 
                   className="btn-export-trigger" 
@@ -1034,7 +1124,8 @@ function App(): React.JSX.Element {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '6px',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    marginTop: '8px'
                   }}
                 >
                   🎬 動画をエクスポート...
