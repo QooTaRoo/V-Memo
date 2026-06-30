@@ -150,8 +150,11 @@ function App(): React.JSX.Element {
     try {
       const metadata = await invoke<any>('get_video_metadata', { path })
       console.log('[AudioFix] Loaded video metadata:', metadata)
-      const codec = metadata.audio_codec?.toLowerCase() || ''
-      if (metadata.has_audio && (codec === 'mp3' || codec.includes('mp3'))) {
+      
+      const hasAudio = metadata.hasAudio ?? metadata.has_audio
+      const codec = (metadata.audioCodec ?? metadata.audio_codec)?.toLowerCase() || ''
+      
+      if (hasAudio && (codec === 'mp3' || codec.includes('mp3'))) {
         const fix = window.confirm(
           `⚠️ この動画は音声がMP3形式であるため、V-Memo（Webブラウザ）で再生したときに音が出ない可能性があります。\n\n動画データをコピーし、音声部分を標準のAAC形式へ自動変換（修復）して読み込みますか？\n(数秒で完了します。)`
         )
