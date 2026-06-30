@@ -389,26 +389,17 @@ fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
 }
 
 #[tauri::command]
-fn fix_video_audio(path: String) -> Result<String, String> {
+fn fix_video_audio(input_path: String, output_path: String) -> Result<String, String> {
     use std::process::Command;
-    use std::path::Path;
-
-    let input_path = Path::new(&path);
-    let parent = input_path.parent().ok_or_else(|| "Invalid video path parent".to_string())?;
-    let stem = input_path.file_stem().ok_or_else(|| "Invalid video file stem".to_string())?.to_str().unwrap_or("video");
-    let ext = input_path.extension().ok_or_else(|| "Invalid video extension".to_string())?.to_str().unwrap_or("mp4");
-
-    let output_path = parent.join(format!("{}_fixed.{}", stem, ext));
-    let output_path_str = output_path.to_str().ok_or_else(|| "Failed to construct output path".to_string())?;
 
     // ffmpeg -y -i <input> -c:v copy -c:a aac <output>
     let output_res = Command::new("ffmpeg")
         .args(&[
             "-y",
-            "-i", &path,
+            "-i", &input_path,
             "-c:v", "copy",
             "-c:a", "aac",
-            output_path_str,
+            &output_path,
         ])
         .output();
 
@@ -419,10 +410,10 @@ fn fix_video_audio(path: String) -> Result<String, String> {
             Command::new("/opt/homebrew/bin/ffmpeg")
                 .args(&[
                     "-y",
-                    "-i", &path,
+                    "-i", &input_path,
                     "-c:v", "copy",
                     "-c:a", "aac",
-                    output_path_str,
+                    &output_path,
                 ])
                 .output()
                 .map_err(|e| format!("Failed to run ffmpeg (also tried Homebrew path): {}", e))?
@@ -434,7 +425,7 @@ fn fix_video_audio(path: String) -> Result<String, String> {
         return Err(format!("ffmpeg exited with error: {}", err_msg));
     }
 
-    Ok(output_path_str.to_string())
+    Ok(output_path)
 }
 
 #[derive(Deserialize, Debug, Clone)]

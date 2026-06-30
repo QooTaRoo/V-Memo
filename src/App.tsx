@@ -149,14 +149,36 @@ function App(): React.JSX.Element {
       const metadata = await invoke<any>('get_video_metadata', { path })
       if (metadata.has_audio && metadata.audio_codec === 'mp3') {
         const fix = window.confirm(
-          `⚠️ この動画は音声がMP3形式であるため、V-Memo（Webブラウザ）で再生したときに音が出ない可能性があります。\n\n動画データをコピーし、音声部分を標準のAAC形式へ自動変換（修復）して読み込みますか？\n(「元のファイル名_fixed.mp4」として保存され、そちらを自動で読み込みます。変換は数秒で終わります。)`
+          `⚠️ この動画は音声がMP3形式であるため、V-Memo（Webブラウザ）で再生したときに音が出ない可能性があります。\n\n動画データをコピーし、音声部分を標準のAAC形式へ自動変換（修復）して読み込みますか？\n(数秒で完了します。)`
         )
         if (fix) {
-          console.log('[AudioFix] Starting format conversion for:', path)
-          const fixedPath = await invoke<string>('fix_video_audio', { path })
-          console.log('[AudioFix] Conversion complete:', fixedPath)
-          alert(`音声フォーマットの修復が完了しました！\n変換後の動画「${fixedPath.split(/[/\\]/).pop()}」を読み込みます。`)
-          return fixedPath
+          // デフォルトの出力ファイル名を生成
+          const parts = path.split(/[/\\]/);
+          const filename = parts.pop() || 'video.mp4';
+          const parentDir = parts.join('/');
+          const lastDot = filename.lastIndexOf('.');
+          const stem = lastDot !== -1 ? filename.substring(0, lastDot) : filename;
+          const ext = lastDot !== -1 ? filename.substring(lastDot + 1) : 'mp4';
+          const defaultDest = `${parentDir}/${stem}_fixed.${ext}`;
+
+          // 保存ファイル選択ダイアログを開く
+          const savePath = await save({
+            defaultPath: defaultDest,
+            filters: [{
+              name: 'Videos',
+              extensions: [ext]
+            }]
+          });
+
+          if (savePath && typeof savePath === 'string') {
+            console.log('[AudioFix] Starting format conversion for:', path, '->', savePath)
+            const fixedPath = await invoke<string>('fix_video_audio', { inputPath: path, outputPath: savePath })
+            console.log('[AudioFix] Conversion complete:', fixedPath)
+            alert(`音声フォーマットの修復が完了しました！\n変換後の動画「${fixedPath.split(/[/\\]/).pop()}」を読み込みます。`)
+            return fixedPath
+          } else {
+            console.log('[AudioFix] Save dialog cancelled, loading original video path.')
+          }
         }
       }
     } catch (err) {
