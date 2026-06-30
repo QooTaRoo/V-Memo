@@ -319,16 +319,20 @@ fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
         }
     };
 
-    if !output.status.success() {
-        let err_msg = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("ffprobe exited with error: {}", err_msg));
-    }
-
     let out_str = String::from_utf8(output.stdout)
         .map_err(|e| format!("Invalid UTF-8 from ffprobe: {}", e))?;
 
-    let parsed: serde_json::Value = serde_json::from_str(&out_str)
-        .map_err(|e| format!("Failed to parse ffprobe JSON: {}", e))?;
+    let parsed: serde_json::Value = match serde_json::from_str(&out_str) {
+        Ok(json) => json,
+        Err(e) => {
+            if !output.status.success() {
+                let err_msg = String::from_utf8_lossy(&output.stderr);
+                return Err(format!("ffprobe exited with error: {} - JSON parse error: {}", err_msg, e));
+            } else {
+                return Err(format!("Failed to parse ffprobe JSON: {}", e));
+            }
+        }
+    };
 
     let streams = parsed.get("streams")
         .and_then(|v| v.as_array())

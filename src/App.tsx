@@ -147,7 +147,9 @@ function App(): React.JSX.Element {
   const checkAndFixVideoAudio = async (path: string): Promise<string> => {
     try {
       const metadata = await invoke<any>('get_video_metadata', { path })
-      if (metadata.has_audio && metadata.audio_codec === 'mp3') {
+      console.log('[AudioFix] Loaded video metadata:', metadata)
+      const codec = metadata.audio_codec?.toLowerCase() || ''
+      if (metadata.has_audio && (codec === 'mp3' || codec.includes('mp3'))) {
         const fix = window.confirm(
           `⚠️ この動画は音声がMP3形式であるため、V-Memo（Webブラウザ）で再生したときに音が出ない可能性があります。\n\n動画データをコピーし、音声部分を標準のAAC形式へ自動変換（修復）して読み込みますか？\n(数秒で完了します。)`
         )
@@ -172,7 +174,7 @@ function App(): React.JSX.Element {
 
           if (savePath && typeof savePath === 'string') {
             console.log('[AudioFix] Starting format conversion for:', path, '->', savePath)
-            const fixedPath = await invoke<string>('fix_video_audio', { inputPath: path, outputPath: savePath })
+            const fixedPath = await invoke<string>('fix_video_audio', { input_path: path, output_path: savePath })
             console.log('[AudioFix] Conversion complete:', fixedPath)
             alert(`音声フォーマットの修復が完了しました！\n変換後の動画「${fixedPath.split(/[/\\]/).pop()}」を読み込みます。`)
             return fixedPath
