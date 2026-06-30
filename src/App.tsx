@@ -1785,7 +1785,7 @@ function App(): React.JSX.Element {
         </div>
 
         {/* スコア推移グラフ */}
-        <div className="score-graph-section" style={{ padding: '0 20px 20px 20px', flexShrink: 0 }}>
+        <div className="score-graph-section" style={{ padding: '0 20px 10px 20px', flexShrink: 0 }}>
           <ScoreProgressionGraph
             projectData={projectData}
             currentTime={currentTime}

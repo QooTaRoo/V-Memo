@@ -131,36 +131,36 @@ export const EventList: React.FC<EventListProps> = ({
                 <div className="event-card-body" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   {type === 'point' ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', flexWrap: 'wrap' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>{teamAName || 'チームA'}</span>
-                      <span style={{ color: 'rgba(255,255,255,0.4)', margin: '0 2px' }}>(</span>
+                      <span style={{ color: 'var(--text-main)', fontWeight: '500' }}>{teamAName || 'チームA'}</span>
+                      <span style={{ color: 'var(--text-muted)', margin: '0 2px' }}>(</span>
                       
                       {/* 得点が入った方 (AならチームAカラー、そうでなければ半透明白) */}
                       <span style={{ 
                         fontWeight: 'bold', 
-                        color: team === 'A' ? teamAColor : 'rgba(255, 255, 255, 0.5)',
+                        color: team === 'A' ? teamAColor : 'var(--text-muted)',
                         fontSize: '13px'
                       }}>
                         {state.scoreA}
                       </span>
                       
-                      <span style={{ color: 'rgba(255,255,255,0.4)' }}>-</span>
+                      <span style={{ color: 'var(--text-muted)' }}>-</span>
                       
                       {/* 得点が入った方 (BならチームBカラー、そうでなければ半透明白) */}
                       <span style={{ 
                         fontWeight: 'bold', 
-                        color: team === 'B' ? teamBColor : 'rgba(255, 255, 255, 0.5)',
+                        color: team === 'B' ? teamBColor : 'var(--text-muted)',
                         fontSize: '13px'
                       }}>
                         {state.scoreB}
                       </span>
                       
-                      <span style={{ color: 'rgba(255,255,255,0.4)', margin: '0 2px' }}>)</span>
-                      <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>{teamBName || 'チームB'}</span>
+                      <span style={{ color: 'var(--text-muted)', margin: '0 2px' }}>)</span>
+                      <span style={{ color: 'var(--text-main)', fontWeight: '500' }}>{teamBName || 'チームB'}</span>
                     </div>
                   ) : type === 'timeout' ? (
                     /* タイムアウトイベント */
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%' }}>
-                      <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>タイムアウト取得:</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>タイムアウト取得:</span>
                       <span style={{
                         fontWeight: 'bold',
                         fontSize: '12px',
@@ -171,10 +171,10 @@ export const EventList: React.FC<EventListProps> = ({
                     </div>
                   ) : (
                     /* 得点イベント以外 (サーブ権やリセット等) */
-                    <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ color: 'var(--text-main)', fontSize: '11px', display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span>{detailText}</span>
                       {type !== 'set_confirm' && (
-                        <span style={{ color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>
+                        <span style={{ color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                           ({state.scoreA} - {state.scoreB})
                         </span>
                       )}
