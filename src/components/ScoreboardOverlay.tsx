@@ -61,8 +61,75 @@ export const ScoreboardOverlay: React.FC<ScoreboardOverlayProps> = ({ state, set
     </div>
   )
 
+  if (settings.theme === 'broadcast-bar') {
+    // テレビ中継風横長スリムバーデザイン
+    // [サーブA] チームA [セット点数A] | 得点A : 得点B | [セット点数B] チームB [サーブB]
+    return (
+      <div className={`scoreboard-overlay ${positionClass} theme-broadcast-bar`} style={scaleStyle}>
+        <div className="scoreboard-glass broadcast-bar-wrapper">
+          <div className="broadcast-team-block top-team-block">
+            <div className="serve-indicator-container">
+              {servingTeam === 'A' && <span className="serve-volleyball" style={{ filter: `drop-shadow(0 0 4px ${colorA})` }}>🏐</span>}
+            </div>
+            <span className="team-name" style={{ color: colorA }}>{teamAName || 'TEAM A'}</span>
+            <div className="team-sets">
+              {Array.from({ length: totalSetDots }).map((_, i) => (
+                <span 
+                  key={i} 
+                  className={`set-dot ${i < setsA ? 'filled' : ''}`} 
+                  style={i < setsA ? { backgroundColor: colorA, borderColor: colorA, boxShadow: `0 0 6px ${colorA}` } : undefined}
+                />
+              ))}
+            </div>
+          </div>
+          
+          <div className="broadcast-divider" />
+          
+          <div className="broadcast-score-block">
+            <span className="team-score" style={{ color: colorA, textShadow: `0 0 10px ${colorA}4d` }}>{scoreA}</span>
+            <span className="score-sep">-</span>
+            <span className="team-score" style={{ color: colorB, textShadow: `0 0 10px ${colorB}4d` }}>{scoreB}</span>
+          </div>
+
+          <div className="broadcast-divider" />
+
+          <div className="broadcast-team-block bottom-team-block">
+            <div className="team-sets">
+              {Array.from({ length: totalSetDots }).map((_, i) => (
+                <span 
+                  key={i} 
+                  className={`set-dot ${i < setsB ? 'filled' : ''}`} 
+                  style={i < setsB ? { backgroundColor: colorB, borderColor: colorB, boxShadow: `0 0 6px ${colorB}` } : undefined}
+                />
+              ))}
+            </div>
+            <span className="team-name" style={{ color: colorB }}>{teamBName || 'TEAM B'}</span>
+            <div className="serve-indicator-container">
+              {servingTeam === 'B' && <span className="serve-volleyball" style={{ filter: `drop-shadow(0 0 4px ${colorB})` }}>🏐</span>}
+            </div>
+          </div>
+
+          {setScores.length > 0 && (
+            <>
+              <div className="broadcast-divider" />
+              <div className="broadcast-past-sets">
+                {setScores.map((set, idx) => (
+                  <span key={idx} className="past-set-pill">
+                    S{idx + 1}:{set.scoreA}-{set.scoreB}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  const themeClass = `theme-${settings.theme || 'modern-dark'}`
+
   return (
-    <div className={`scoreboard-overlay ${positionClass}`} style={scaleStyle}>
+    <div className={`scoreboard-overlay ${positionClass} ${themeClass}`} style={scaleStyle}>
       <div className="scoreboard-glass">
         <div className="scoreboard-teams">
           {swapTeams ? teamBRow : teamARow}

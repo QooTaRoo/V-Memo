@@ -9,6 +9,7 @@ export interface MatchSettings {
   overlayPosition: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   teamAColor?: string;
   teamBColor?: string;
+  workspaceTheme?: 'dark' | 'light' | 'amoled';
 }
 
 export interface SetScore {

@@ -34,7 +34,8 @@ const createDefaultProject = (videoPath: string | null = null): ProjectData => (
     overlaySize: 100,
     overlayPosition: 'top-left',
     teamAColor: '#ff9100',
-    teamBColor: '#f50057'
+    teamBColor: '#f50057',
+    workspaceTheme: 'dark'
   },
   events: [
     {
@@ -1054,8 +1055,10 @@ function App(): React.JSX.Element {
     return <ProjectDashboard onProjectLoaded={applyProjectLoadedData} />
   }
 
+  const currentTheme = scoreboardSettings.workspaceTheme || 'dark'
+
   return (
-    <div className="app-root" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+    <div className={`app-root theme-${currentTheme}`} style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       {/* 上部メニューバー */}
       <header className="app-menubar" style={{
         height: '50px',
@@ -2320,6 +2323,34 @@ function App(): React.JSX.Element {
                     <option value="top-right">右上</option>
                     <option value="bottom-left">左下</option>
                     <option value="bottom-right">右下</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>得点板デザイン</label>
+                  <select 
+                    value={scoreboardSettings.theme} 
+                    onChange={(e) => handleSettingChange('theme', e.target.value)}
+                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                  >
+                    <option value="modern-dark">グラスモーフィズム</option>
+                    <option value="minimal">ミニマル・フラット</option>
+                    <option value="retro-digital">レトロ・デジタル</option>
+                    <option value="broadcast-bar">テレビ中継風バー</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>全体のテーマ</label>
+                  <select 
+                    value={scoreboardSettings.workspaceTheme || 'dark'} 
+                    onChange={(e) => handleSettingChange('workspaceTheme', e.target.value as any)}
+                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                  >
+                    <option value="dark">モダン・ダーク</option>
+                    <option value="light">クリーン・ライト</option>
+                    <option value="amoled">ミッドナイト・ブラック</option>
                   </select>
                 </div>
               </div>

@@ -140,3 +140,112 @@
   font-weight: 600;
   color: rgba(255, 255, 255, 0.8);
 }
+
+/* ==========================================================================
+   得点板別テーマスタイリング
+   ========================================================================== */
+
+/* 1. ミニマル・フラット (Minimal Flat) */
+.scoreboard-overlay.theme-minimal .scoreboard-glass {
+  background: rgba(12, 12, 14, 0.95);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  padding: 10px 14px;
+}
+.scoreboard-overlay.theme-minimal .set-dot {
+  border-radius: 0%; /* 直角ドット */
+  width: 5px;
+  height: 5px;
+}
+
+/* 2. レトロ・デジタル (Retro Digital) */
+.scoreboard-overlay.theme-retro-digital .scoreboard-glass {
+  background: #000000;
+  border: 2px solid #00ff66; /* ネオングリーン境界 */
+  border-radius: 6px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 0 15px rgba(0, 255, 102, 0.3);
+  padding: 12px 18px;
+  font-family: 'SF Mono', Courier, monospace;
+}
+.scoreboard-overlay.theme-retro-digital .team-name {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.scoreboard-overlay.theme-retro-digital .team-score {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 900;
+  font-size: 32px;
+}
+
+/* 3. テレビ中継風横長スリムバー (Broadcast Bar) */
+.scoreboard-overlay.theme-broadcast-bar .broadcast-bar-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(10, 10, 12, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px; /* 丸みのある横長バー */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+.scoreboard-overlay.theme-broadcast-bar .broadcast-team-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.scoreboard-overlay.theme-broadcast-bar .broadcast-team-block .team-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.scoreboard-overlay.theme-broadcast-bar .broadcast-team-block .team-sets {
+  display: flex;
+  gap: 4px;
+}
+.scoreboard-overlay.theme-broadcast-bar .broadcast-team-block .set-dot {
+  width: 6px;
+  height: 6px;
+}
+.scoreboard-overlay.theme-broadcast-bar .broadcast-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.15);
+}
+.scoreboard-overlay.theme-broadcast-bar .broadcast-score-block {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.scoreboard-overlay.theme-broadcast-bar .broadcast-score-block .team-score {
+  font-size: 20px;
+  font-weight: 800;
+  min-width: 24px;
+  text-align: center;
+}
+.scoreboard-overlay.theme-broadcast-bar .broadcast-score-block .score-sep {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: bold;
+}
+.scoreboard-overlay.theme-broadcast-bar .broadcast-past-sets {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+}
+.scoreboard-overlay.theme-broadcast-bar .past-set-pill {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+}

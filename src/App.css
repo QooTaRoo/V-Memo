@@ -21,8 +21,8 @@ html, body {
   display: flex;
   flex: 1;
   width: 100vw;
-  background-color: #0c0c0e;
-  color: #e2e2e7;
+  background-color: var(--bg-app);
+  color: var(--text-main);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   overflow: hidden;
 }
@@ -33,14 +33,58 @@ html, body {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background-color: #0c0c0e;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+
+  /* デフォルトテーマ（モダン・ダーク） */
+  --bg-app: #0c0c0e;
+  --bg-panel: #121216;
+  --bg-panel-translucent: rgba(20, 20, 25, 0.4);
+  --bg-main: #08080a;
+  --text-main: #e2e2e7;
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --border-color: rgba(255, 255, 255, 0.06);
+  --border-input: rgba(255, 255, 255, 0.12);
+  --bg-input: rgba(255, 255, 255, 0.04);
+  --bg-card: rgba(255, 255, 255, 0.01);
+  --border-card: rgba(255, 255, 255, 0.03);
+}
+
+/* クリーン・ライトテーマ */
+.app-root.theme-light {
+  --bg-app: #f4f4f7;
+  --bg-panel: #ffffff;
+  --bg-panel-translucent: rgba(255, 255, 255, 0.85);
+  --bg-main: #e9e9f0;
+  --text-main: #1c1c1e;
+  --text-muted: rgba(0, 0, 0, 0.5);
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-input: rgba(0, 0, 0, 0.15);
+  --bg-input: rgba(0, 0, 0, 0.03);
+  --bg-card: rgba(0, 0, 0, 0.02);
+  --border-card: rgba(0, 0, 0, 0.05);
+}
+
+/* ミッドナイト・ブラックテーマ */
+.app-root.theme-amoled {
+  --bg-app: #000000;
+  --bg-panel: #0a0a0a;
+  --bg-panel-translucent: rgba(0, 0, 0, 0.85);
+  --bg-main: #000000;
+  --text-main: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.5);
+  --border-color: rgba(255, 255, 255, 0.15);
+  --border-input: rgba(255, 255, 255, 0.2);
+  --bg-input: rgba(255, 255, 255, 0.05);
+  --bg-card: rgba(255, 255, 255, 0.02);
+  --border-card: rgba(255, 255, 255, 0.08);
 }
 
 /* 上部メニューバー */
 .app-menubar {
   height: 50px;
-  background-color: #121216;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--bg-panel);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -50,9 +94,9 @@ html, body {
 }
 
 .menu-btn {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #e2e2e7;
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  color: var(--text-main);
   padding: 6px 12px;
   border-radius: 5px;
   font-size: 12px;

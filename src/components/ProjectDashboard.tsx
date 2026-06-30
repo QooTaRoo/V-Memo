@@ -189,7 +189,8 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ onProjectLoa
         overlaySize: 100,
         overlayPosition: 'top-left' as const,
         teamAColor: '#ff9100',
-        teamBColor: '#f50057'
+        teamBColor: '#f50057',
+        workspaceTheme: 'dark' as const
       }
 
       const newProjectData: ProjectData = {

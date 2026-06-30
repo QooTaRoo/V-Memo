@@ -1,6 +1,6 @@
 .score-progression-graph {
-  background: rgba(20, 20, 25, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-panel-translucent);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -15,14 +15,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 10px;
 }
 
 .graph-title-label {
   font-size: 14px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-main);
   letter-spacing: 0.5px;
 }
 
@@ -58,9 +58,9 @@
 /* コンテナレイアウト */
 .graph-container-layout {
   display: flex;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
   overflow: hidden;
   height: 120px;
 }
@@ -69,8 +69,8 @@
 .graph-summary-card {
   width: 160px;
   padding: 12px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.02);
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-card);
   display: flex;
   flex-direction: column;
   justify-content: center;
