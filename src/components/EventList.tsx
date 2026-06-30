@@ -9,6 +9,8 @@ interface EventListProps {
   onEventDelete: (timestamp: number) => void
   teamAName: string
   teamBName: string
+  teamAColor?: string;
+  teamBColor?: string;
 }
 
 export const formatTime = (seconds: number): string => {
@@ -24,7 +26,9 @@ export const EventList: React.FC<EventListProps> = ({
   onEventClick,
   onEventDelete,
   teamAName,
-  teamBName
+  teamBName,
+  teamAColor = '#ff9100',
+  teamBColor = '#f50057'
 }) => {
   return (
     <div className="event-list-container">
@@ -82,8 +86,16 @@ export const EventList: React.FC<EventListProps> = ({
                       borderRadius: '4px',
                       fontSize: '10px',
                       fontWeight: 'bold',
-                      backgroundColor: type === 'point' ? 'rgba(0, 229, 255, 0.15)' : type === 'timeout' ? 'rgba(255, 200, 0, 0.15)' : 'rgba(255, 255, 255, 0.08)',
-                      color: type === 'point' ? '#00e5ff' : type === 'timeout' ? '#ffd740' : 'rgba(255, 255, 255, 0.6)'
+                      backgroundColor: type === 'point' 
+                        ? (team === 'A' ? `${teamAColor}25` : `${teamBColor}25`) 
+                        : type === 'timeout' 
+                          ? 'rgba(255, 200, 0, 0.15)' 
+                          : 'rgba(255, 255, 255, 0.08)',
+                      color: type === 'point' 
+                        ? (team === 'A' ? teamAColor : teamBColor) 
+                        : type === 'timeout' 
+                          ? '#ffd740' 
+                          : 'rgba(255, 255, 255, 0.6)'
                     }}>
                       {type === 'point' ? '得点' : type === 'serve_change' ? 'サーブ' : type === 'set_confirm' ? '確定' : type === 'overlay_toggle' ? '表示設定' : type === 'timeout' ? 'タイムアウト' : 'その他'}
                     </span>
@@ -93,9 +105,9 @@ export const EventList: React.FC<EventListProps> = ({
                         borderRadius: '4px',
                         fontSize: '10px',
                         fontWeight: 'bold',
-                        backgroundColor: state.setWinner === 'A' ? 'rgba(0, 229, 255, 0.15)' : 'rgba(255, 59, 48, 0.15)',
-                        color: state.setWinner === 'A' ? '#00e5ff' : '#ff3b30',
-                        border: state.setWinner === 'A' ? '1px solid rgba(0, 229, 255, 0.3)' : '1px solid rgba(255, 59, 48, 0.3)'
+                        backgroundColor: state.setWinner === 'A' ? `${teamAColor}25` : `${teamBColor}25`,
+                        color: state.setWinner === 'A' ? teamAColor : teamBColor,
+                        border: state.setWinner === 'A' ? `1px solid ${teamAColor}4D` : `1px solid ${teamBColor}4D`
                       }}>
                         セット獲得: {state.setWinner === 'A' ? teamAName || 'A' : teamBName || 'B'}
                       </span>
@@ -108,14 +120,6 @@ export const EventList: React.FC<EventListProps> = ({
                       onClick={(e) => {
                         e.stopPropagation()
                         onEventDelete(event.timestamp)
-                      }}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'rgba(255, 59, 48, 0.7)',
-                        cursor: 'pointer',
-                        fontSize: '11px',
-                        padding: 0
                       }}
                     >
                       🗑️
@@ -130,10 +134,10 @@ export const EventList: React.FC<EventListProps> = ({
                       <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>{teamAName || 'チームA'}</span>
                       <span style={{ color: 'rgba(255,255,255,0.4)', margin: '0 2px' }}>(</span>
                       
-                      {/* 得点が入った方 (Aならシアン、そうでなければ半透明白) */}
+                      {/* 得点が入った方 (AならチームAカラー、そうでなければ半透明白) */}
                       <span style={{ 
                         fontWeight: 'bold', 
-                        color: team === 'A' ? '#00e5ff' : 'rgba(255, 255, 255, 0.5)',
+                        color: team === 'A' ? teamAColor : 'rgba(255, 255, 255, 0.5)',
                         fontSize: '13px'
                       }}>
                         {state.scoreA}
@@ -141,10 +145,10 @@ export const EventList: React.FC<EventListProps> = ({
                       
                       <span style={{ color: 'rgba(255,255,255,0.4)' }}>-</span>
                       
-                      {/* 得点が入った方 (Bなら赤、そうでなければ半透明白) */}
+                      {/* 得点が入った方 (BならチームBカラー、そうでなければ半透明白) */}
                       <span style={{ 
                         fontWeight: 'bold', 
-                        color: team === 'B' ? '#ff3b30' : 'rgba(255, 255, 255, 0.5)',
+                        color: team === 'B' ? teamBColor : 'rgba(255, 255, 255, 0.5)',
                         fontSize: '13px'
                       }}>
                         {state.scoreB}
@@ -152,8 +156,6 @@ export const EventList: React.FC<EventListProps> = ({
                       
                       <span style={{ color: 'rgba(255,255,255,0.4)', margin: '0 2px' }}>)</span>
                       <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>{teamBName || 'チームB'}</span>
-
-
                     </div>
                   ) : type === 'timeout' ? (
                     /* タイムアウトイベント */
@@ -162,7 +164,7 @@ export const EventList: React.FC<EventListProps> = ({
                       <span style={{
                         fontWeight: 'bold',
                         fontSize: '12px',
-                        color: team === 'A' ? '#00e5ff' : '#ff3b30'
+                        color: team === 'A' ? teamAColor : teamBColor
                       }}>
                         {team === 'A' ? teamAName || 'チームA' : teamBName || 'チームB'}
                       </span>

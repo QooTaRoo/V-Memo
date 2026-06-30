@@ -239,9 +239,10 @@
   border: none;
   cursor: pointer;
   padding: 4px;
-  font-size: 12px;
+  font-size: 13px;
   border-radius: 4px;
-  opacity: 0;
+  opacity: 0.4;
+  color: #ff4444;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -249,11 +250,11 @@
 }
 
 .event-card:hover .btn-delete-event {
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
 .btn-delete-event:hover {
   background: rgba(255, 68, 68, 0.15);
   opacity: 1 !important;
-  transform: scale(1.15);
+  transform: scale(1.2);
 }

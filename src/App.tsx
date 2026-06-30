@@ -32,7 +32,9 @@ const createDefaultProject = (videoPath: string | null = null): ProjectData => (
     finalSetPoints: 25,
     theme: 'modern-dark',
     overlaySize: 100,
-    overlayPosition: 'top-left'
+    overlayPosition: 'top-left',
+    teamAColor: '#ff9100',
+    teamBColor: '#f50057'
   },
   events: [
     {
@@ -88,6 +90,8 @@ function App(): React.JSX.Element {
   const [newPresetName, setNewPresetName] = useState<string>('')
   const [swapTeams, setSwapTeams] = useState<boolean>(false)
   const [mediaPort, setMediaPort] = useState<number | null>(null)
+  const [videoScaleFactor, setVideoScaleFactor] = useState<number>(1.0)
+
 
   // 試合設定数値入力の一時ローカル状態 (空文字入力を許容するため)
   const [inputNormalPoints, setInputNormalPoints] = useState<string>('25')
@@ -111,6 +115,31 @@ function App(): React.JSX.Element {
       videoRef.current.muted = isMuted
     }
   }, [volume, isMuted, videoPath])
+
+  const updateVideoScaleFactor = () => {
+    if (videoRef.current && videoRef.current.videoWidth > 0) {
+      const displayedWidth = videoRef.current.clientWidth
+      const nativeWidth = videoRef.current.videoWidth
+      setVideoScaleFactor(displayedWidth / nativeWidth)
+    }
+  }
+
+  useEffect(() => {
+    if (!videoRef.current) return
+    
+    updateVideoScaleFactor()
+    
+    const observer = new ResizeObserver(() => {
+      updateVideoScaleFactor()
+    })
+    
+    observer.observe(videoRef.current)
+    
+    return () => {
+      observer.disconnect()
+    }
+  }, [videoPath, projectData])
+
 
   // 動画ファイル選択 (単独ロード)
   const handleSelectVideo = async (): Promise<void> => {
@@ -1202,7 +1231,7 @@ function App(): React.JSX.Element {
                 onClick={togglePlay}
               />
               {/* スコアボードの重ね合わせ表示 (ON/OFFトグル連動) */}
-              {activeState.overlayVisible && <ScoreboardOverlay state={activeState} settings={scoreboardSettings} swapTeams={swapTeams} />}
+              {activeState.overlayVisible && <ScoreboardOverlay state={activeState} settings={scoreboardSettings} swapTeams={swapTeams} scaleFactor={videoScaleFactor} />}
             </div>
           ) : (
             <div className="video-placeholder" onClick={handleSelectVideo}>
@@ -1845,6 +1874,8 @@ function App(): React.JSX.Element {
           onEventDelete={handleEventDelete}
           teamAName={scoreboardSettings.teamAName}
           teamBName={scoreboardSettings.teamBName}
+          teamAColor={scoreboardSettings.teamAColor}
+          teamBColor={scoreboardSettings.teamBColor}
         />
       </section>
 
@@ -2171,6 +2202,37 @@ function App(): React.JSX.Element {
                     onChange={(e) => handleSettingChange('teamBName', e.target.value)}
                     style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
                   />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>チームAカラー</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input 
+                      type="color" 
+                      value={scoreboardSettings.teamAColor || '#ff9100'} 
+                      onChange={(e) => handleSettingChange('teamAColor', e.target.value)}
+                      style={{ width: '40px', height: '36px', padding: 0, border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', cursor: 'pointer', background: 'none' }}
+                    />
+                    <span style={{ fontSize: '13px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.7)' }}>
+                      {scoreboardSettings.teamAColor || '#ff9100'}
+                    </span>
+                  </div>
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>チームBカラー</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input 
+                      type="color" 
+                      value={scoreboardSettings.teamBColor || '#f50057'} 
+                      onChange={(e) => handleSettingChange('teamBColor', e.target.value)}
+                      style={{ width: '40px', height: '36px', padding: 0, border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', cursor: 'pointer', background: 'none' }}
+                    />
+                    <span style={{ fontSize: '13px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.7)' }}>
+                      {scoreboardSettings.teamBColor || '#f50057'}
+                    </span>
+                  </div>
                 </div>
               </div>
 

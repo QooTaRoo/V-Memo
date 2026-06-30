@@ -7,6 +7,8 @@ export interface MatchSettings {
   theme: string;
   overlaySize: number;
   overlayPosition: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  teamAColor?: string;
+  teamBColor?: string;
 }
 
 export interface SetScore {

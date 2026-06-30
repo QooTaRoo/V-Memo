@@ -108,11 +108,16 @@ export const ScoreProgressionGraph: React.FC<ScoreProgressionGraphProps> = ({
   const teamAName = projectData?.matchSettings.teamAName || '大宮東'
   const teamBName = projectData?.matchSettings.teamBName || '三浦学苑'
 
-  // 表示順（swapTeams）を考慮したチーム情報
+  const colorA = projectData?.matchSettings.teamAColor || '#ff9100'
+  const colorB = projectData?.matchSettings.teamBColor || '#f50057'
+
+  // 表示順（swapTeams）を考慮したチーム情報と色
   const topTeamName = swapTeams ? teamBName : teamAName
   const bottomTeamName = swapTeams ? teamAName : teamBName
   const topScore = swapTeams ? summary.scoreB : summary.scoreA
   const bottomScore = swapTeams ? summary.scoreA : summary.scoreB
+  const topColor = swapTeams ? colorB : colorA
+  const bottomColor = swapTeams ? colorA : colorB
 
   return (
     <div className="score-progression-graph">
@@ -144,12 +149,12 @@ export const ScoreProgressionGraph: React.FC<ScoreProgressionGraphProps> = ({
         <div className="graph-summary-card">
           <div className="summary-set-label">SET {selectedSet}</div>
           <div className="summary-team-row top-team">
-            <span className="summary-team-name" title={topTeamName}>{topTeamName}</span>
-            <span className="summary-team-score">{topScore}</span>
+            <span className="summary-team-name" style={{ color: topColor }} title={topTeamName}>{topTeamName}</span>
+            <span className="summary-team-score" style={{ color: topColor }}>{topScore}</span>
           </div>
           <div className="summary-team-row bottom-team">
-            <span className="summary-team-name" title={bottomTeamName}>{bottomTeamName}</span>
-            <span className="summary-team-score">{bottomScore}</span>
+            <span className="summary-team-name" style={{ color: bottomColor }} title={bottomTeamName}>{bottomTeamName}</span>
+            <span className="summary-team-score" style={{ color: bottomColor }}>{bottomScore}</span>
           </div>
         </div>
 
@@ -172,6 +177,18 @@ export const ScoreProgressionGraph: React.FC<ScoreProgressionGraphProps> = ({
                 const isTopScored = swapTeams ? !isA : isA
                 const points = isA ? event.state.scoreA : event.state.scoreB
                 const isActive = event.id === activeEventId
+                const eventTeamColor = isA ? colorA : colorB
+
+                const blockStyle: React.CSSProperties = isActive ? {
+                  backgroundColor: eventTeamColor,
+                  borderColor: eventTeamColor,
+                  boxShadow: `0 0 10px ${eventTeamColor}99`,
+                  transform: 'scale(1.08)'
+                } : {
+                  backgroundColor: `${eventTeamColor}40`,
+                  borderColor: `${eventTeamColor}cc`,
+                  boxShadow: 'none'
+                }
 
                 return (
                   <div 
@@ -184,7 +201,10 @@ export const ScoreProgressionGraph: React.FC<ScoreProgressionGraphProps> = ({
                     {/* 上段行 */}
                     <div className="grid-cell top-cell">
                       {isTopScored ? (
-                        <div className={`point-block top-block-style ${isActive ? 'active-block' : ''}`}>
+                        <div 
+                          className="point-block" 
+                          style={blockStyle}
+                        >
                           {points}
                         </div>
                       ) : (
@@ -195,7 +215,10 @@ export const ScoreProgressionGraph: React.FC<ScoreProgressionGraphProps> = ({
                     {/* 下段行 */}
                     <div className="grid-cell bottom-cell">
                       {!isTopScored ? (
-                        <div className={`point-block bottom-block-style ${isActive ? 'active-block' : ''}`}>
+                        <div 
+                          className="point-block" 
+                          style={blockStyle}
+                        >
                           {points}
                         </div>
                       ) : (
