@@ -74,6 +74,7 @@ function App(): React.JSX.Element {
   // エクスポートモーダルの状態
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false)
   const [isMatchSettingsModalOpen, setIsMatchSettingsModalOpen] = useState<boolean>(false)
+  const [isDisplaySettingsModalOpen, setIsDisplaySettingsModalOpen] = useState<boolean>(false)
   const [exportResolution, setExportResolution] = useState<string>('original')
   const [exportFade, setExportFade] = useState<boolean>(true)
   const [exportTitle, setExportTitle] = useState<boolean>(false)
@@ -1167,6 +1168,23 @@ function App(): React.JSX.Element {
             ⚙️ 試合設定...
           </button>
           <button 
+            className="menu-btn" 
+            onClick={() => setIsDisplaySettingsModalOpen(true)}
+            style={{
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: '600',
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              color: '#e2e2e7',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            🎨 表示設定...
+          </button>
+          <button 
             className="menu-btn menu-btn-primary" 
             onClick={() => setIsExportModalOpen(true)}
             disabled={!videoPath}
@@ -2166,73 +2184,75 @@ function App(): React.JSX.Element {
             justifyContent: 'center',
             zIndex: 99999
           }}
+          onClick={() => setIsMatchSettingsModalOpen(false)}
         >
           <div 
             className="settings-modal-window"
+            onClick={(e) => e.stopPropagation()}
             style={{
               width: '500px',
-              backgroundColor: '#141419',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              backgroundColor: 'var(--bg-panel)',
+              border: '1px solid var(--border-color)',
               borderRadius: '12px',
               padding: '24px',
-              color: 'white',
+              color: 'var(--text-main)',
               boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
               display: 'flex',
               flexDirection: 'column',
               gap: '16px'
             }}
           >
-            <h3 style={{ margin: 0, fontSize: '18px', color: '#00e5ff', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px', fontWeight: 'bold' }}>
-              ⚙️ 試合設定 & 表示設定
+            <h3 style={{ margin: 0, fontSize: '18px', color: '#00e5ff', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', fontWeight: 'bold' }}>
+              ⚙️ 試合設定
             </h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>チームA名</label>
+                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'bold' }}>チームA名</label>
                   <input 
                     type="text" 
                     value={scoreboardSettings.teamAName} 
                     onChange={(e) => handleSettingChange('teamAName', e.target.value)}
-                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                    style={{ padding: '10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
                   />
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>チームB名</label>
+                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'bold' }}>チームB名</label>
                   <input 
                     type="text" 
                     value={scoreboardSettings.teamBName} 
                     onChange={(e) => handleSettingChange('teamBName', e.target.value)}
-                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                    style={{ padding: '10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: '12px' }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>チームAカラー</label>
+                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'bold' }}>チームAカラー</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <input 
                       type="color" 
                       value={scoreboardSettings.teamAColor || '#ff9100'} 
                       onChange={(e) => handleSettingChange('teamAColor', e.target.value)}
-                      style={{ width: '40px', height: '36px', padding: 0, border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', cursor: 'pointer', background: 'none' }}
+                      style={{ width: '40px', height: '36px', padding: 0, border: '1px solid var(--border-input)', borderRadius: '6px', cursor: 'pointer', background: 'none' }}
                     />
-                    <span style={{ fontSize: '13px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.7)' }}>
+                    <span style={{ fontSize: '13px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
                       {scoreboardSettings.teamAColor || '#ff9100'}
                     </span>
                   </div>
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>チームBカラー</label>
+                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'bold' }}>チームBカラー</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <input 
                       type="color" 
                       value={scoreboardSettings.teamBColor || '#f50057'} 
                       onChange={(e) => handleSettingChange('teamBColor', e.target.value)}
-                      style={{ width: '40px', height: '36px', padding: 0, border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', cursor: 'pointer', background: 'none' }}
+                      style={{ width: '40px', height: '36px', padding: 0, border: '1px solid var(--border-input)', borderRadius: '6px', cursor: 'pointer', background: 'none' }}
                     />
-                    <span style={{ fontSize: '13px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.7)' }}>
+                    <span style={{ fontSize: '13px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
                       {scoreboardSettings.teamBColor || '#f50057'}
                     </span>
                   </div>
@@ -2241,11 +2261,11 @@ function App(): React.JSX.Element {
 
               <div style={{ display: 'flex', gap: '12px' }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>最大セット数</label>
+                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'bold' }}>最大セット数</label>
                   <select 
                     value={scoreboardSettings.maxSets} 
                     onChange={(e) => handleSettingChange('maxSets', parseInt(e.target.value))}
-                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                    style={{ padding: '10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
                   >
                     <option value={1}>1セットマッチ</option>
                     <option value={3}>3セットマッチ</option>
@@ -2254,7 +2274,7 @@ function App(): React.JSX.Element {
                 </div>
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>通常セット点数</label>
+                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'bold' }}>通常セット点数</label>
                   <input 
                     type="number" 
                     min={1}
@@ -2268,12 +2288,12 @@ function App(): React.JSX.Element {
                         setInputNormalPoints(String(scoreboardSettings.normalSetPoints));
                       }
                     }}
-                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', textAlign: 'center', outline: 'none' }}
+                    style={{ padding: '10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', textAlign: 'center', outline: 'none' }}
                   />
                 </div>
 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>最終セット点数</label>
+                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'bold' }}>最終セット点数</label>
                   <input 
                     type="number" 
                     min={1}
@@ -2287,14 +2307,78 @@ function App(): React.JSX.Element {
                         setInputFinalPoints(String(scoreboardSettings.finalSetPoints));
                       }
                     }}
-                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', textAlign: 'center', outline: 'none' }}
+                    style={{ padding: '10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', textAlign: 'center', outline: 'none' }}
                   />
                 </div>
               </div>
+            </div>
 
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <button 
+                onClick={() => setIsMatchSettingsModalOpen(false)}
+                style={{
+                  padding: '10px 24px',
+                  background: '#00e5ff',
+                  color: '#08080a',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#00bccc'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00e5ff'}
+              >
+                適用して閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 表示設定モーダル */}
+      {isDisplaySettingsModalOpen && (
+        <div 
+          className="modal-backdrop"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+          onClick={() => setIsDisplaySettingsModalOpen(false)}
+        >
+          <div 
+            className="settings-modal-window"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '500px',
+              backgroundColor: 'var(--bg-panel)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '12px',
+              padding: '24px',
+              color: 'var(--text-main)',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: '18px', color: '#00e5ff', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', fontWeight: 'bold' }}>
+              🎨 表示設定
+            </h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>得点板サイズ (%)</label>
+                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'bold' }}>得点板サイズ (%)</label>
                   <input 
                     type="number" 
                     min={10}
@@ -2309,15 +2393,15 @@ function App(): React.JSX.Element {
                         setInputOverlaySize(String(scoreboardSettings.overlaySize));
                       }
                     }}
-                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', textAlign: 'center', outline: 'none' }}
+                    style={{ padding: '10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', textAlign: 'center', outline: 'none' }}
                   />
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>得点板位置</label>
+                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'bold' }}>得点板位置</label>
                   <select 
                     value={scoreboardSettings.overlayPosition} 
                     onChange={(e) => handleSettingChange('overlayPosition', e.target.value as any)}
-                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                    style={{ padding: '10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
                   >
                     <option value="top-left">左上</option>
                     <option value="top-right">右上</option>
@@ -2329,11 +2413,11 @@ function App(): React.JSX.Element {
 
               <div style={{ display: 'flex', gap: '12px' }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>得点板デザイン</label>
+                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'bold' }}>得点板デザイン</label>
                   <select 
                     value={scoreboardSettings.theme} 
                     onChange={(e) => handleSettingChange('theme', e.target.value)}
-                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                    style={{ padding: '10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
                   >
                     <option value="modern-dark">グラスモーフィズム</option>
                     <option value="minimal">ミニマル・フラット</option>
@@ -2342,11 +2426,11 @@ function App(): React.JSX.Element {
                   </select>
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>全体のテーマ</label>
+                  <label style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'bold' }}>全体のテーマ</label>
                   <select 
                     value={scoreboardSettings.workspaceTheme || 'dark'} 
                     onChange={(e) => handleSettingChange('workspaceTheme', e.target.value as any)}
-                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                    style={{ padding: '10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
                   >
                     <option value="dark">モダン・ダーク</option>
                     <option value="light">クリーン・ライト</option>
@@ -2358,7 +2442,7 @@ function App(): React.JSX.Element {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
               <button 
-                onClick={() => setIsMatchSettingsModalOpen(false)}
+                onClick={() => setIsDisplaySettingsModalOpen(false)}
                 style={{
                   padding: '10px 24px',
                   background: '#00e5ff',
