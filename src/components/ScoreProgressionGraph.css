@@ -1,5 +1,5 @@
 .score-progression-graph {
-  background: var(--bg-panel-translucent);
+  background: var(--bg-main);
   border: 1px solid var(--border-color);
   border-radius: 8px; /* Match presets border-radius */
   padding: 10px 12px; /* Match presets padding */
@@ -7,8 +7,6 @@
   flex-direction: column;
   gap: 8px;
   box-sizing: border-box;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 .graph-header {

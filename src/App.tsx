@@ -1653,11 +1653,9 @@ function App(): React.JSX.Element {
             <div className="presets-container" style={{
               marginTop: '10px',
               padding: '10px 12px',
-              background: 'var(--bg-panel-translucent)',
+              background: 'var(--bg-main)',
               borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)'
+              border: '1px solid var(--border-color)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', gap: '8px' }}>
                 <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-main)', flexShrink: 0 }}>
@@ -2331,7 +2329,7 @@ function App(): React.JSX.Element {
                         setInputOverlaySize(String(scoreboardSettings.overlaySize));
                       }
                     }}
-                    style={{ padding: '10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', textAlign: 'center', outline: 'none' }}
+                    style={{ height: '38px', boxSizing: 'border-box', padding: '0 10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', textAlign: 'center', outline: 'none' }}
                   />
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -2339,7 +2337,7 @@ function App(): React.JSX.Element {
                   <select 
                     value={scoreboardSettings.overlayPosition} 
                     onChange={(e) => handleSettingChange('overlayPosition', e.target.value as any)}
-                    style={{ padding: '10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                    style={{ height: '38px', boxSizing: 'border-box', padding: '0 10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
                   >
                     <option value="top-left">左上</option>
                     <option value="top-right">右上</option>
@@ -2355,7 +2353,7 @@ function App(): React.JSX.Element {
                   <select 
                     value={scoreboardSettings.theme} 
                     onChange={(e) => handleSettingChange('theme', e.target.value)}
-                    style={{ padding: '10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                    style={{ height: '38px', boxSizing: 'border-box', padding: '0 10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
                   >
                     <option value="modern-dark">グラスモーフィズム</option>
                     <option value="minimal">ミニマル・フラット</option>
@@ -2368,7 +2366,7 @@ function App(): React.JSX.Element {
                   <select 
                     value={scoreboardSettings.workspaceTheme || 'dark'} 
                     onChange={(e) => handleSettingChange('workspaceTheme', e.target.value as any)}
-                    style={{ padding: '10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                    style={{ height: '38px', boxSizing: 'border-box', padding: '0 10px', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-input)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
                   >
                     <option value="dark">モダン・ダーク</option>
                     <option value="light">クリーン・ライト</option>

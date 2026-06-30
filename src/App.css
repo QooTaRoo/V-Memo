@@ -433,15 +433,13 @@ html, body {
 
 /* タイムライン & コントロールエリア */
 .timeline-section {
-  background-color: var(--bg-panel-translucent);
+  background-color: var(--bg-main);
   border-top: 1px solid var(--border-color);
   padding: 6px 20px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   flex-shrink: 0;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 /* シークバー */
