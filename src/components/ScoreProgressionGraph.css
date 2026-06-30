@@ -62,28 +62,28 @@
   border-radius: 8px;
   border: 1px solid var(--border-color);
   overflow: hidden;
-  height: 120px;
+  height: 80px;
 }
 
 /* 左側サマリーカード */
 .graph-summary-card {
-  width: 160px;
-  padding: 12px;
+  width: 140px;
+  padding: 8px 12px;
   border-right: 1px solid var(--border-color);
   background: var(--bg-card);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 8px;
+  gap: 4px;
   box-sizing: border-box;
   flex-shrink: 0;
 }
 
 .summary-set-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.35);
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
   text-transform: uppercase;
 }
 
@@ -91,21 +91,21 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .summary-team-name {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.8);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100px;
+  max-width: 80px;
 }
 
 .summary-team-score {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 800;
   font-family: 'SF Mono', Consolas, monospace;
 }
@@ -132,14 +132,14 @@
   flex: 1;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 12px;
+  padding: 6px 12px;
   display: flex;
   align-items: center;
   min-width: 0;
   box-sizing: border-box;
   background-image: linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px),
                     linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px);
-  background-size: 40px 40px;
+  background-size: 30px 30px;
 }
 
 .graph-scroll-area::-webkit-scrollbar {
@@ -183,9 +183,9 @@
 .timeline-column {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 6px 4px;
-  border-radius: 6px;
+  gap: 6px;
+  padding: 4px 2px;
+  border-radius: 4px;
   transition: all 0.2s ease;
   cursor: pointer;
   box-sizing: border-box;
@@ -201,29 +201,29 @@
 }
 
 .grid-cell {
-  width: 32px;
-  height: 32px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .empty-cell-placeholder {
-  width: 32px;
-  height: 32px;
+  width: 22px;
+  height: 22px;
 }
 
 /* 得点ブロックのスタイル */
 .point-block {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  font-size: 13px;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  font-size: 9.5px;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
   color: #fff;
 }

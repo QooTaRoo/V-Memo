@@ -1061,16 +1061,7 @@ function App(): React.JSX.Element {
   return (
     <div className={`app-root theme-${currentTheme}`} style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       {/* 上部メニューバー */}
-      <header className="app-menubar" style={{
-        height: '50px',
-        backgroundColor: '#121216',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '0 20px',
-        flexShrink: 0
-      }}>
+      <header className="app-menubar">
         <div className="menubar-left" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <span className="menubar-logo" style={{ fontSize: '20px' }}>🏐</span>
           <span className="menubar-title" style={{ fontSize: '15px', fontWeight: 'bold', background: 'linear-gradient(135deg, #00e5ff, #00ff66)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -1082,11 +1073,11 @@ function App(): React.JSX.Element {
               title={jsonPath}
               style={{
                 fontSize: '12px',
-                color: 'rgba(255, 255, 255, 0.5)',
-                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                color: 'var(--text-muted)',
+                backgroundColor: 'var(--bg-input)',
                 padding: '4px 10px',
                 borderRadius: '4px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                border: '1px solid var(--border-color)',
                 marginLeft: '8px',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
