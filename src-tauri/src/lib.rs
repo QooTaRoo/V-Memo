@@ -284,17 +284,18 @@ struct VideoMetadata {
     fps: f64,
     duration: f64,
     has_audio: bool,
+    audio_codec: String,
 }
 
 #[tauri::command]
 fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
     use std::process::Command;
 
-    // ffprobe -v error -show_entries stream=width,height,r_frame_rate,duration,codec_type -show_entries format=duration -of json <path>
+    // ffprobe -v error -show_entries stream=width,height,r_frame_rate,duration,codec_type,codec_name -show_entries format=duration -of json <path>
     let output_res = Command::new("ffprobe")
         .args(&[
             "-v", "error",
-            "-show_entries", "stream=width,height,r_frame_rate,duration,codec_type",
+            "-show_entries", "stream=width,height,r_frame_rate,duration,codec_type,codec_name",
             "-show_entries", "format=duration",
             "-of", "json",
             &path,
@@ -308,7 +309,7 @@ fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
             Command::new("/opt/homebrew/bin/ffprobe")
                 .args(&[
                     "-v", "error",
-                    "-show_entries", "stream=width,height,r_frame_rate,duration,codec_type",
+                    "-show_entries", "stream=width,height,r_frame_rate,duration,codec_type,codec_name",
                     "-show_entries", "format=duration",
                     "-of", "json",
                     &path,
@@ -337,6 +338,7 @@ fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
     let mut height = 0;
     let mut fps = 30.0;
     let mut has_audio = false;
+    let mut audio_codec = String::new();
     let mut stream_duration = None;
 
     for stream in streams {
@@ -363,6 +365,9 @@ fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
             }
         } else if codec_type == "audio" {
             has_audio = true;
+            if let Some(codec) = stream.get("codec_name").and_then(|v| v.as_str()) {
+                audio_codec = codec.to_string();
+            }
         }
     }
 
@@ -379,7 +384,57 @@ fn get_video_metadata(path: String) -> Result<VideoMetadata, String> {
         fps,
         duration,
         has_audio,
+        audio_codec,
     })
+}
+
+#[tauri::command]
+fn fix_video_audio(path: String) -> Result<String, String> {
+    use std::process::Command;
+    use std::path::Path;
+
+    let input_path = Path::new(&path);
+    let parent = input_path.parent().ok_or_else(|| "Invalid video path parent".to_string())?;
+    let stem = input_path.file_stem().ok_or_else(|| "Invalid video file stem".to_string())?.to_str().unwrap_or("video");
+    let ext = input_path.extension().ok_or_else(|| "Invalid video extension".to_string())?.to_str().unwrap_or("mp4");
+
+    let output_path = parent.join(format!("{}_fixed.{}", stem, ext));
+    let output_path_str = output_path.to_str().ok_or_else(|| "Failed to construct output path".to_string())?;
+
+    // ffmpeg -y -i <input> -c:v copy -c:a aac <output>
+    let output_res = Command::new("ffmpeg")
+        .args(&[
+            "-y",
+            "-i", &path,
+            "-c:v", "copy",
+            "-c:a", "aac",
+            output_path_str,
+        ])
+        .output();
+
+    let output = match output_res {
+        Ok(out) => out,
+        Err(_) => {
+            // Homebrew fallback path
+            Command::new("/opt/homebrew/bin/ffmpeg")
+                .args(&[
+                    "-y",
+                    "-i", &path,
+                    "-c:v", "copy",
+                    "-c:a", "aac",
+                    output_path_str,
+                ])
+                .output()
+                .map_err(|e| format!("Failed to run ffmpeg (also tried Homebrew path): {}", e))?
+        }
+    };
+
+    if !output.status.success() {
+        let err_msg = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("ffmpeg exited with error: {}", err_msg));
+    }
+
+    Ok(output_path_str.to_string())
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -668,7 +723,8 @@ pub fn run() {
             get_video_metadata,
             export_video,
             get_temp_dir,
-            save_temp_file
+            save_temp_file,
+            fix_video_audio
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

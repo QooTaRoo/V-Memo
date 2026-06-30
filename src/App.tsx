@@ -143,6 +143,28 @@ function App(): React.JSX.Element {
   }, [videoPath, projectData])
 
 
+  // 音声フォーマット（MP3 in MP4等）の自動修復チェック
+  const checkAndFixVideoAudio = async (path: string): Promise<string> => {
+    try {
+      const metadata = await invoke<any>('get_video_metadata', { path })
+      if (metadata.has_audio && metadata.audio_codec === 'mp3') {
+        const fix = window.confirm(
+          `⚠️ この動画は音声がMP3形式であるため、V-Memo（Webブラウザ）で再生したときに音が出ない可能性があります。\n\n動画データをコピーし、音声部分を標準のAAC形式へ自動変換（修復）して読み込みますか？\n(「元のファイル名_fixed.mp4」として保存され、そちらを自動で読み込みます。変換は数秒で終わります。)`
+        )
+        if (fix) {
+          console.log('[AudioFix] Starting format conversion for:', path)
+          const fixedPath = await invoke<string>('fix_video_audio', { path })
+          console.log('[AudioFix] Conversion complete:', fixedPath)
+          alert(`音声フォーマットの修復が完了しました！\n変換後の動画「${fixedPath.split(/[/\\]/).pop()}」を読み込みます。`)
+          return fixedPath
+        }
+      }
+    } catch (err) {
+      console.error('[AudioFix] Check or conversion failed:', err)
+    }
+    return path
+  }
+
   // 動画ファイル選択 (単独ロード)
   const handleSelectVideo = async (): Promise<void> => {
     try {
@@ -155,8 +177,9 @@ function App(): React.JSX.Element {
       })
       
       if (selected && typeof selected === 'string') {
-        setVideoPath(selected)
-        const name = selected.split(/[/\\]/).pop() || ''
+        const finalPath = await checkAndFixVideoAudio(selected)
+        setVideoPath(finalPath)
+        const name = finalPath.split(/[/\\]/).pop() || ''
         setVideoName(name)
         setIsPlaying(false)
         setCurrentTime(0)
@@ -165,7 +188,7 @@ function App(): React.JSX.Element {
 
         // プロジェクトがない場合はデフォルト新規プロジェクトを自動生成
         if (!projectData) {
-          const newProj = createDefaultProject(selected)
+          const newProj = createDefaultProject(finalPath)
           // 初期化して再計算
           newProj.events = recalculateEventStates(newProj.events, newProj.matchSettings)
           setProjectData(newProj)
@@ -175,7 +198,7 @@ function App(): React.JSX.Element {
           // すでにプロジェクトがある場合は、動画パスを差し替え
           setProjectData({
             ...projectData,
-            videoPath: selected
+            videoPath: finalPath
           })
         }
       }
@@ -267,10 +290,11 @@ function App(): React.JSX.Element {
     if (data.videoPath) {
       const videoExists = await invoke<boolean>('check_file_exists', { path: data.videoPath })
       if (videoExists) {
-        setVideoPath(data.videoPath)
-        const name = data.videoPath.split(/[/\\]/).pop() || ''
+        const finalPath = await checkAndFixVideoAudio(data.videoPath)
+        setVideoPath(finalPath)
+        const name = finalPath.split(/[/\\]/).pop() || ''
         setVideoName(name)
-        console.log('Video auto-loaded:', data.videoPath)
+        console.log('Video auto-loaded:', finalPath)
       } else {
         alert(
           `関連付けられた動画ファイルが見つかりませんでした。\nファイルが存在するか確認し、手動で動画を読み込んでください。\n(検索したパス: ${data.videoPath})`
