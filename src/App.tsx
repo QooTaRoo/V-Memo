@@ -1,26 +1,25 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { ScoreboardOverlay } from './components/ScoreboardOverlay'
-import { EventList, formatTime } from './components/EventList'
-import { ScoreController } from './components/ScoreController'
-import { ScoreProgressionGraph } from './components/ScoreProgressionGraph'
-
-import {
-  ProjectData,
-  ExportPreset,
-  getActiveEventState,
-  findActiveEventIndex,
-  recalculateEventStates,
-  INITIAL_STATE,
-  EventState,
-  ScoreEvent,
-  MatchSettings
-} from './utils/scoreEngine'
-import { open, save } from '@tauri-apps/plugin-dialog'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import { exportTransparentWebm } from './utils/videoExporter'
-import { ProjectDashboard } from './components/ProjectDashboard'
+import { open, save } from '@tauri-apps/plugin-dialog'
+import React, { useEffect, useRef, useState } from 'react'
 import './App.css'
+import { EventList, formatTime } from './components/EventList'
+import { ProjectDashboard } from './components/ProjectDashboard'
+import { ScoreboardOverlay } from './components/ScoreboardOverlay'
+import { ScoreController } from './components/ScoreController'
+import { ScoreProgressionGraph } from './components/ScoreProgressionGraph'
+import {
+  EventState,
+  ExportPreset,
+  findActiveEventIndex,
+  getActiveEventState,
+  INITIAL_STATE,
+  MatchSettings,
+  ProjectData,
+  recalculateEventStates,
+  ScoreEvent
+} from './utils/scoreEngine'
+import { exportTransparentWebm } from './utils/videoExporter'
 
 // デフォルトの新規プロジェクトテンプレート
 const createDefaultProject = (videoPath: string | null = null): ProjectData => ({
@@ -184,6 +183,8 @@ function App(): React.JSX.Element {
               if (savePath && typeof savePath === 'string') {
                 setIsRepairing(true)
                 setRepairStatusText('音声形式を変換中...')
+                // レンダリングスレッドに描画（モーダル表示）の機会を与えるため、100ms待つ
+                await new Promise((r) => setTimeout(r, 100))
                 try {
                   console.log('[AudioConvert] Starting format conversion for:', path, '->', savePath)
                   const fixedPath = await invoke<string>('fix_video_audio', { inputPath: path, outputPath: savePath })
@@ -2507,9 +2508,9 @@ function App(): React.JSX.Element {
               🎵 音声形式の互換性変換
             </h3>
             <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#e2e2e7' }}>
-              この動画は音声がMP3形式であるため、V-Memo（Webブラウザ）で再生したときに音が出ない可能性があります。
+              この動画は音声がMP3形式であるため、音が出ない可能性があります。
               <br /><br />
-              ブラウザで再生可能な標準の音声形式（AAC）に変換した動画ファイルを新しく作成して、それを読み込みますか？
+              再生可能な標準の音声形式（AAC）に変換した動画ファイルを新しく作成して、それを読み込みますか？
               （変換は数秒で完了し、元の動画ファイルはそのまま残ります）
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
