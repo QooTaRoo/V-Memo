@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react'
 import { ScoreboardOverlay } from './components/ScoreboardOverlay'
 import { EventList, formatTime } from './components/EventList'
 import { ScoreController } from './components/ScoreController'
+import { ScoreProgressionGraph } from './components/ScoreProgressionGraph'
+
 import {
   ProjectData,
   ExportPreset,
@@ -1794,10 +1796,27 @@ function App(): React.JSX.Element {
 
         </div>
 
-        {/* スコア操作パネル */}
-        <div className="score-control-section">
+        {/* スコア推移グラフ */}
+        <div className="score-graph-section" style={{ padding: '0 20px 20px 20px', flexShrink: 0 }}>
+          <ScoreProgressionGraph
+            projectData={projectData}
+            currentTime={currentTime}
+            swapTeams={swapTeams}
+            onSeek={(time) => {
+              if (videoRef.current) {
+                videoRef.current.currentTime = time
+              }
+            }}
+          />
+        </div>
+      </main>
+
+      {/* 右ペイン: 得点操作 & イベント履歴 */}
+      <section className="events-sidebar">
+        <div className="compact-score-controller-wrapper" style={{ padding: '16px 16px 0 16px', flexShrink: 0 }}>
           {projectData ? (
             <ScoreController
+              compact={true}
               state={activeState}
               settings={scoreboardSettings}
               disabled={!videoPath}
@@ -1814,15 +1833,11 @@ function App(): React.JSX.Element {
               onToggleSwapTeams={() => setSwapTeams(s => !s)}
             />
           ) : (
-            <div className="score-control-placeholder">
-              動画またはプロジェクトJSONをロードすると、スコア操作パネルが有効になります。
+            <div className="score-control-placeholder" style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>
+              プロジェクトをロードすると操作パネルが有効になります。
             </div>
           )}
         </div>
-      </main>
-
-      {/* 右ペイン: イベント履歴 */}
-      <section className="events-sidebar">
         <EventList
           events={projectData?.events || []}
           activeEventIndex={activeEventIndex}

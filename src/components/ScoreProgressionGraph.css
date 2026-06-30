@@ -1,0 +1,251 @@
+.score-progression-graph {
+  background: rgba(20, 20, 25, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.graph-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 10px;
+}
+
+.graph-title-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.5px;
+}
+
+.set-selector-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.set-selector-wrapper label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+}
+
+.set-select-dropdown {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+
+.set-select-dropdown:focus {
+  border-color: #00e5ff;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.15);
+}
+
+/* コンテナレイアウト */
+.graph-container-layout {
+  display: flex;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+  height: 120px;
+}
+
+/* 左側サマリーカード */
+.graph-summary-card {
+  width: 160px;
+  padding: 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.summary-set-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.summary-team-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.summary-team-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.summary-team-score {
+  font-size: 18px;
+  font-weight: 800;
+  font-family: 'SF Mono', Consolas, monospace;
+}
+
+/* チーム別カラー設定 */
+/* チームA (または上段デフォルト) */
+.summary-team-row.top-team .summary-team-name {
+  color: #ff9100; /* オレンジ */
+}
+.summary-team-row.top-team .summary-team-score {
+  color: #ff9100;
+}
+
+/* チームB (または下段デフォルト) */
+.summary-team-row.bottom-team .summary-team-name {
+  color: #f50057; /* マゼンタ */
+}
+.summary-team-row.bottom-team .summary-team-score {
+  color: #f50057;
+}
+
+/* 右側スクロールエリア */
+.graph-scroll-area {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  box-sizing: border-box;
+  background-image: linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.graph-scroll-area::-webkit-scrollbar {
+  height: 6px;
+}
+
+.graph-scroll-area::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.graph-scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+.graph-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.graph-empty-state {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 20px;
+}
+
+/* タイムライングリッド */
+.timeline-grid-wrapper {
+  display: flex;
+  gap: 6px;
+  flex-direction: row;
+  height: 100%;
+  align-items: center;
+}
+
+.timeline-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.timeline-column:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.timeline-column.active-col {
+  background: rgba(0, 229, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(0, 229, 255, 0.15);
+}
+
+.grid-cell {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-cell-placeholder {
+  width: 32px;
+  height: 32px;
+}
+
+/* 得点ブロックのスタイル */
+.point-block {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+  color: #fff;
+}
+
+/* 上段（オレンジ）ブロック */
+.top-block-style {
+  background: rgba(240, 110, 20, 0.45);
+  border: 1.5px solid rgba(240, 110, 20, 0.8);
+}
+
+.top-block-style.active-block {
+  background: #ff9100;
+  border-color: #ffb74d;
+  box-shadow: 0 0 12px rgba(255, 145, 0, 0.6);
+  transform: scale(1.08);
+}
+
+/* 下段（マゼンタ）ブロック */
+.bottom-block-style {
+  background: rgba(224, 30, 100, 0.45);
+  border: 1.5px solid rgba(224, 30, 100, 0.8);
+}
+
+.bottom-block-style.active-block {
+  background: #f50057;
+  border-color: #ff4081;
+  box-shadow: 0 0 12px rgba(245, 0, 87, 0.6);
+  transform: scale(1.08);
+}

@@ -1284,3 +1284,17 @@ html, body {
   padding: 10px 24px;
 }
 
+/* 右サイドバーでのEventListの高さの自動調整 */
+.events-sidebar .event-list-container {
+  flex: 1;
+  min-height: 0;
+  height: auto !important; /* override height: 100% */
+  border-left: none !important; /* remove border as events-sidebar handles it */
+}
+
+/* スコア推移グラフ領域のスタイル */
+.score-graph-section {
+  margin-top: 12px;
+}
+
+

@@ -319,3 +319,99 @@
   opacity: 0.2;
   cursor: not-allowed;
 }
+
+/* チーム左右入れ替え (swapTeams) */
+.score-controller-container.swapped {
+  flex-direction: row-reverse;
+}
+
+/* コンパクト表示 (右サイドバー配置用) */
+.score-controller-container.compact {
+  flex-direction: column;
+  padding: 12px;
+  gap: 10px;
+  background: rgba(20, 20, 25, 0.65);
+  border-radius: 10px;
+  width: 100%;
+}
+
+/* コンパクトかつスワップされている場合のチーム行反転 */
+.score-controller-container.compact.swapped {
+  flex-direction: column; /* コンテナ自体は縦並びを維持 */
+}
+
+.score-controller-container.compact.swapped .compact-teams-row {
+  flex-direction: row-reverse;
+}
+
+.compact-teams-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.score-controller-container.compact .team-control-block {
+  padding: 8px;
+  gap: 6px;
+  border-radius: 6px;
+}
+
+.score-controller-container.compact .control-team-header h4 {
+  font-size: 12px;
+  max-width: 90px;
+}
+
+.score-controller-container.compact .control-serve-dot {
+  font-size: 13px;
+}
+
+.score-controller-container.compact .btn-score-number {
+  width: 50px;
+  height: 50px;
+  font-size: 22px;
+  border-width: 1.5px;
+  box-shadow: 0 2px 8px rgba(0, 229, 255, 0.05);
+}
+
+.score-controller-container.compact .sets-adjust-direct {
+  font-size: 10px;
+}
+
+.score-controller-container.compact .btn-timeout {
+  padding: 4px 8px;
+  font-size: 10px;
+  border-radius: 4px;
+}
+
+.score-controller-container.compact .center-action-block {
+  width: 100%;
+  padding: 0;
+}
+
+.score-controller-container.compact .center-controls-wrapper {
+  gap: 6px;
+}
+
+.score-controller-container.compact .btn-system {
+  padding: 6px 10px;
+  font-size: 10px;
+  border-radius: 4px;
+}
+
+.score-controller-container.compact .btn-system-undo {
+  font-size: 10px !important;
+  padding: 6px 10px !important;
+}
+
+.score-controller-container.compact .set-winner-alert .alert-text,
+.score-controller-container.compact .match-finished-alert .alert-text {
+  font-size: 11px;
+}
+
+.score-controller-container.compact .btn-confirm-set,
+.score-controller-container.compact .btn-reset-match {
+  padding: 6px 12px;
+  font-size: 10px;
+  border-radius: 4px;
+}
+
