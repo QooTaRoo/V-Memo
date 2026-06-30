@@ -419,3 +419,41 @@
 .btn-submit-create:active {
   transform: translateY(0);
 }
+
+.form-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #00e5ff;
+  border-left: 3px solid #00ff66;
+  padding-left: 8px;
+  margin: 16px 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-row.flex-four {
+  display: flex;
+  gap: 16px;
+}
+
+.form-row.flex-four .form-group {
+  flex: 1;
+}
+
+.form-checkbox-row .checkbox-container {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  transition: color 0.2s ease;
+}
+
+.form-checkbox-row .checkbox-container:hover {
+  color: #fff;
+}
+
+.form-checkbox-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #00e5ff;
+}
+

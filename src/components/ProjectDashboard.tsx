@@ -28,6 +28,17 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ onProjectLoa
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
   const [selectedVideoName, setSelectedVideoName] = useState<string>('')
 
+  // 新規プロジェクトエクスポート設定の状態
+  const [eventName, setEventName] = useState('')
+  const [matchCard, setMatchCard] = useState('')
+  const [datePlace, setDatePlace] = useState('')
+  const [titleDuration, setTitleDuration] = useState<number>(5)
+  const [showTitle, setShowTitle] = useState(false)
+  const [exportResolution, setExportResolution] = useState('original')
+  const [exportFade, setExportFade] = useState(true)
+  const [exportType, setExportType] = useState<'normal' | 'transparent'>('normal')
+  const [exportRangeMode, setExportRangeMode] = useState<'all' | 'inout'>('all')
+
   // 起動時にローカルストレージから最近使用したプロジェクトをロード
   useEffect(() => {
     loadRecentProjects()
@@ -190,7 +201,18 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ onProjectLoa
             state: INITIAL_STATE
           }
         ],
-        videoPath: selectedVideo
+        videoPath: selectedVideo,
+        exportSettings: {
+          eventName: eventName.trim(),
+          matchCard: matchCard.trim(),
+          datePlace: datePlace.trim(),
+          titleDuration: titleDuration,
+          showTitle: showTitle,
+          resolution: exportResolution,
+          fade: exportFade,
+          exportType: exportType,
+          rangeMode: exportRangeMode
+        }
       }
 
       newProjectData.events = recalculateEventStates(newProjectData.events, defaultSettings)
@@ -304,6 +326,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ onProjectLoa
               <div className="new-project-tab">
                 <h2>新規プロジェクト作成</h2>
                 <div className="new-project-form">
+                  <h3 className="form-section-title">試合基本設定</h3>
                   <div className="form-row">
                     <div className="form-group">
                       <label>チームA名</label>
@@ -359,6 +382,105 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ onProjectLoa
                     </div>
                   </div>
 
+                  <h3 className="form-section-title">動画の書き出し（エクスポート）設定</h3>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>イベント名</label>
+                      <input 
+                        type="text" 
+                        value={eventName} 
+                        onChange={(e) => setEventName(e.target.value)} 
+                        placeholder="例: 令和8年度 高校総体"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>対戦カード</label>
+                      <input 
+                        type="text" 
+                        value={matchCard} 
+                        onChange={(e) => setMatchCard(e.target.value)} 
+                        placeholder="例: 男子決勝"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>日時・場所</label>
+                      <input 
+                        type="text" 
+                        value={datePlace} 
+                        onChange={(e) => setDatePlace(e.target.value)} 
+                        placeholder="例: 2026.06.30 ○○アリーナ"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row flex-four">
+                    <div className="form-group">
+                      <label>解像度</label>
+                      <select 
+                        value={exportResolution} 
+                        onChange={(e) => setExportResolution(e.target.value)}
+                      >
+                        <option value="original">オリジナル (元サイズ)</option>
+                        <option value="1080p">1080p (1920x1080)</option>
+                        <option value="720p">720p (1280x720)</option>
+                        <option value="480p">480p (854x480)</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>書き出し形式</label>
+                      <select 
+                        value={exportType} 
+                        onChange={(e) => setExportType(e.target.value as any)}
+                      >
+                        <option value="normal">動画にスコアを重ねる</option>
+                        <option value="transparent">透過スコア素材のみ (ProRes)</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>書き出し範囲</label>
+                      <select 
+                        value={exportRangeMode} 
+                        onChange={(e) => setExportRangeMode(e.target.value as any)}
+                      >
+                        <option value="all">動画全体</option>
+                        <option value="inout">イン点・アウト点の間</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>タイトル表示時間</label>
+                      <input 
+                        type="number" 
+                        min={1} 
+                        value={titleDuration} 
+                        onChange={(e) => setTitleDuration(Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row form-checkbox-row" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                    <label className="checkbox-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={showTitle} 
+                        onChange={(e) => setShowTitle(e.target.checked)} 
+                      />
+                      <span className="checkbox-text" style={{ fontSize: '13px' }}>動画の先頭にタイトルカード（番組表風）を表示する</span>
+                    </label>
+
+                    <label className="checkbox-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={exportFade} 
+                        onChange={(e) => setExportFade(e.target.checked)} 
+                      />
+                      <span className="checkbox-text" style={{ fontSize: '13px' }}>動画の前後1秒に黒フェード（音声含む）を適用する</span>
+                    </label>
+                  </div>
+
+                  <h3 className="form-section-title" style={{ marginTop: '20px' }}>動画メディア選択</h3>
                   <div className="form-group video-selector-group">
                     <label>動画ファイル (任意)</label>
                     <div className="video-picker-row">
@@ -375,7 +497,7 @@ export const ProjectDashboard: React.FC<ProjectDashboardProps> = ({ onProjectLoa
                     </div>
                   </div>
 
-                  <div className="form-actions">
+                  <div className="form-actions" style={{ marginTop: '24px' }}>
                     <button className="btn-submit-create" onClick={handleCreateNew}>
                       🚀 プロジェクトを作成して保存...
                     </button>

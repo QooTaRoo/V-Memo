@@ -15,6 +15,8 @@ interface ScoreControllerProps {
   onToggleOverlay: () => void
   onUndo: () => void
   canUndo: boolean
+  swapTeams: boolean
+  onToggleSwapTeams: () => void
 }
 
 export const ScoreController: React.FC<ScoreControllerProps> = ({
@@ -29,7 +31,9 @@ export const ScoreController: React.FC<ScoreControllerProps> = ({
   showOverlay,
   onToggleOverlay,
   onUndo,
-  canUndo
+  canUndo,
+  swapTeams,
+  onToggleSwapTeams
 }) => {
   const { scoreA, scoreB, setsA, setsB, servingTeam, setWinner, matchFinished } = state
   const { teamAName, teamBName } = settings
@@ -102,6 +106,14 @@ export const ScoreController: React.FC<ScoreControllerProps> = ({
             <div className="system-controls">
               <button className={`btn-system ${showOverlay ? 'active' : ''}`} onClick={onToggleOverlay} disabled={disabled}>
                 {showOverlay ? '得点板: 表示中' : '得点板: 非表示'}
+              </button>
+              <button 
+                className={`btn-system ${swapTeams ? 'active' : ''}`} 
+                onClick={onToggleSwapTeams} 
+                disabled={disabled}
+                title="クリックしてA/Bの上下を入れ替え (セット変わりに自動でも切り替わります)"
+              >
+                {swapTeams ? '表示順: ↕ B / A' : '表示順: ↕ A / B'}
               </button>
               <button className="btn-system btn-danger" onClick={onReset} disabled={disabled}>
                 最初からリセット

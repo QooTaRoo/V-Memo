@@ -68,6 +68,7 @@ function App(): React.JSX.Element {
 
   // エクスポートモーダルの状態
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false)
+  const [isMatchSettingsModalOpen, setIsMatchSettingsModalOpen] = useState<boolean>(false)
   const [exportResolution, setExportResolution] = useState<string>('original')
   const [exportFade, setExportFade] = useState<boolean>(true)
   const [exportTitle, setExportTitle] = useState<boolean>(false)
@@ -1023,257 +1024,154 @@ function App(): React.JSX.Element {
   }
 
   return (
-    <div className="app-container">
-      {/* 左ペイン: 設定・ファイル管理 */}
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="logo-icon">🏐</div>
-          <h2>V-Memo Score Editor</h2>
-        </div>
-
-        <div className="sidebar-section">
-          <h3>プロジェクト情報</h3>
-          <div className="project-info-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
-            <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.4)' }}>開いているプロジェクト:</div>
-            {jsonPath && (
-              <div 
-                className="file-name-preview" 
-                title={jsonPath}
-                style={{ 
-                  padding: '8px 12px', 
-                  background: 'rgba(255, 255, 255, 0.03)', 
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  color: '#fff',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}
-              >
-                📄 {jsonPath.split(/[/\\]/).pop()}
-              </div>
-            )}
-            
-            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-              <button 
-                className={`btn-file ${videoPath ? 'loaded' : ''}`} 
-                onClick={handleSelectVideo}
-                style={{ flex: 1, padding: '8px 12px', fontSize: '12px' }}
-              >
-                🎬 {videoPath ? '動画変更' : '動画選択'}
-              </button>
-            </div>
-            {videoName && (
-              <div 
-                className="file-name-preview" 
-                title={videoPath || ''}
-                style={{ fontSize: '11px', color: '#00e5ff', paddingLeft: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-              >
-                {videoName}
-              </div>
-            )}
-          </div>
-
-          {projectData && (
-            <div className="save-buttons-row" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="btn-save" style={{ flex: 1 }} onClick={() => handleSaveProject(false)}>
-                  💾 上書き保存
-                </button>
-                <button className="btn-save btn-secondary" style={{ flex: 1 }} onClick={() => handleSaveProject(true)}>
-                  別名保存...
-                </button>
-              </div>
-              <button 
-                className="btn-save" 
-                onClick={handleCloseProject}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  backgroundColor: 'rgba(255, 80, 80, 0.1)',
-                  color: '#ff5050',
-                  border: '1px solid rgba(255, 80, 80, 0.2)',
-                  borderRadius: '6px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  transition: 'all 0.2s'
-                }}
-              >
-                🚪 プロジェクトを閉じる
-              </button>
-              {videoPath && (
-                <button 
-                  className="btn-export-trigger" 
-                  onClick={() => setIsExportModalOpen(true)}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    backgroundColor: '#00e5ff',
-                    color: '#08080a',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s',
-                    marginTop: '8px'
-                  }}
-                >
-                  🎬 動画をエクスポート...
-                </button>
-              )}
-            </div>
+    <div className="app-root" style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+      {/* 上部メニューバー */}
+      <header className="app-menubar" style={{
+        height: '50px',
+        backgroundColor: '#121216',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '0 20px',
+        flexShrink: 0
+      }}>
+        <div className="menubar-left" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <span className="menubar-logo" style={{ fontSize: '20px' }}>🏐</span>
+          <span className="menubar-title" style={{ fontSize: '15px', fontWeight: 'bold', background: 'linear-gradient(135deg, #00e5ff, #00ff66)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            V-Memo Score Editor
+          </span>
+          {jsonPath && (
+            <span 
+              className="menubar-project-name" 
+              title={jsonPath}
+              style={{
+                fontSize: '12px',
+                color: 'rgba(255, 255, 255, 0.5)',
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                padding: '4px 10px',
+                borderRadius: '4px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                marginLeft: '8px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '250px'
+              }}
+            >
+              📄 {jsonPath.split(/[/\\]/).pop()}
+            </span>
           )}
         </div>
-
-        {/* 試合設定フォーム */}
-        <div className="sidebar-section game-settings-form">
-          <h3>試合設定</h3>
-          <div className="settings-fields">
-            <div className="field-group">
-              <label>チームA名</label>
-              <input
-                type="text"
-                value={scoreboardSettings.teamAName}
-                onChange={(e) => handleSettingChange('teamAName', e.target.value)}
-              />
-            </div>
-            
-            <div className="field-group">
-              <label>チームB名</label>
-              <input
-                type="text"
-                value={scoreboardSettings.teamBName}
-                onChange={(e) => handleSettingChange('teamBName', e.target.value)}
-              />
-            </div>
-
-            <div className="field-group-row">
-              <div className="field-group">
-                <label>最大セット</label>
-                <select
-                  value={scoreboardSettings.maxSets}
-                  onChange={(e) => handleSettingChange('maxSets', parseInt(e.target.value))}
-                >
-                  <option value={1}>1</option>
-                  <option value={3}>3</option>
-                  <option value={5}>5</option>
-                </select>
-              </div>
-
-              <div className="field-group">
-                <label>通常得点</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={inputNormalPoints}
-                  onChange={(e) => setInputNormalPoints(e.target.value)}
-                  onBlur={() => {
-                    const val = parseInt(inputNormalPoints);
-                    if (!isNaN(val) && val >= 1) {
-                      handleSettingChange('normalSetPoints', val);
-                    } else {
-                      setInputNormalPoints(String(scoreboardSettings.normalSetPoints));
-                    }
-                  }}
-                />
-              </div>
-
-              <div className="field-group">
-                <label>最終得点</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={inputFinalPoints}
-                  onChange={(e) => setInputFinalPoints(e.target.value)}
-                  onBlur={() => {
-                    const val = parseInt(inputFinalPoints);
-                    if (!isNaN(val) && val >= 1) {
-                      handleSettingChange('finalSetPoints', val);
-                    } else {
-                      setInputFinalPoints(String(scoreboardSettings.finalSetPoints));
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          </div>
+        <div className="menubar-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            className="menu-btn" 
+            onClick={handleSelectVideo}
+            style={{
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: '600',
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              color: '#e2e2e7',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            🎬 動画を変更
+          </button>
+          <button 
+            className="menu-btn" 
+            onClick={() => handleSaveProject(false)}
+            style={{
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: '600',
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              color: '#e2e2e7',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            💾 上書き保存
+          </button>
+          <button 
+            className="menu-btn" 
+            onClick={() => handleSaveProject(true)}
+            style={{
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: '600',
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              color: '#e2e2e7',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            📝 別名保存...
+          </button>
+          <button 
+            className="menu-btn" 
+            onClick={() => setIsMatchSettingsModalOpen(true)}
+            style={{
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: '600',
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              color: '#e2e2e7',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            ⚙️ 試合設定...
+          </button>
+          <button 
+            className="menu-btn menu-btn-primary" 
+            onClick={() => setIsExportModalOpen(true)}
+            disabled={!videoPath}
+            style={{
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: '700',
+              backgroundColor: videoPath ? '#00e5ff' : 'rgba(255,255,255,0.02)',
+              border: 'none',
+              color: videoPath ? '#08080a' : 'rgba(255,255,255,0.2)',
+              borderRadius: '5px',
+              cursor: videoPath ? 'pointer' : 'not-allowed',
+              transition: 'all 0.2s'
+            }}
+          >
+            📤 動画のエクスポート...
+          </button>
+          <span style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '16px', margin: '0 4px' }} />
+          <button 
+            className="menu-btn menu-btn-danger" 
+            onClick={handleCloseProject}
+            style={{
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: '600',
+              backgroundColor: 'rgba(255, 80, 80, 0.1)',
+              border: '1px solid rgba(255, 80, 80, 0.2)',
+              color: '#ff5050',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            🚪 プロジェクトを閉じる
+          </button>
         </div>
+      </header>
 
-        {/* 得点板表示設定 */}
-        <div className="sidebar-section overlay-settings-form">
-          <h3>得点板プレビュー設定</h3>
-          <div className="settings-fields">
-            <div className="field-group-row">
-              <div className="field-group">
-                <label>位置</label>
-                <select
-                  value={scoreboardSettings.overlayPosition}
-                  onChange={(e) => handleSettingChange('overlayPosition', e.target.value as any)}
-                >
-                  <option value="top-left">左上</option>
-                  <option value="top-right">右上</option>
-                  <option value="bottom-left">左下</option>
-                  <option value="bottom-right">右下</option>
-                </select>
-              </div>
-
-              <div className="field-group">
-                <label>サイズ (%)</label>
-                <input
-                  type="number"
-                  min={10}
-                  max={300}
-                  value={inputOverlaySize}
-                  onChange={(e) => setInputOverlaySize(e.target.value)}
-                  onBlur={() => {
-                    const val = parseInt(inputOverlaySize);
-                    if (!isNaN(val) && val >= 10 && val <= 300) {
-                      handleSettingChange('overlaySize', val);
-                    } else {
-                      setInputOverlaySize(String(scoreboardSettings.overlaySize));
-                    }
-                  }}
-                />
-              </div>
-            </div>
-            <div className="field-group-row" style={{ marginTop: '8px' }}>
-              <div className="field-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
-                <label style={{ marginBottom: 0 }}>チーム表示順</label>
-                <button
-                  onClick={() => setSwapTeams(s => !s)}
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '11px',
-                    backgroundColor: swapTeams ? 'rgba(255, 200, 0, 0.15)' : 'rgba(255,255,255,0.06)',
-                    border: swapTeams ? '1px solid rgba(255, 200, 0, 0.4)' : '1px solid rgba(255,255,255,0.12)',
-                    color: swapTeams ? '#ffd740' : 'rgba(255,255,255,0.7)',
-                    borderRadius: '5px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    whiteSpace: 'nowrap'
-                  }}
-                  title="クリックしてA/Bの上下を入れ替え (セット変わりに自動でも切り替わります)"
-                >
-                  {swapTeams ? '↕ B / A' : '↕ A / B'}
-                </button>
-                <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)' }}>
-                  (セット毎に自動切替)
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </aside>
+      <div className="app-container">
 
       {/* 中央ペイン: メインプレイヤー & タイムライン & 操作パネル */}
       <main className="main-content">
@@ -1912,6 +1810,8 @@ function App(): React.JSX.Element {
               onToggleOverlay={handleToggleOverlay}
               onUndo={handleUndo}
               canUndo={projectData ? projectData.events.length > 1 : false}
+              swapTeams={swapTeams}
+              onToggleSwapTeams={() => setSwapTeams(s => !s)}
             />
           ) : (
             <div className="score-control-placeholder">
@@ -2200,7 +2100,180 @@ function App(): React.JSX.Element {
           </div>
         </div>
       )}
+
+      {/* 試合設定モーダル */}
+      {isMatchSettingsModalOpen && (
+        <div 
+          className="modal-backdrop"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999
+          }}
+        >
+          <div 
+            className="settings-modal-window"
+            style={{
+              width: '500px',
+              backgroundColor: '#141419',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '24px',
+              color: 'white',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: '18px', color: '#00e5ff', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px', fontWeight: 'bold' }}>
+              ⚙️ 試合設定 & 表示設定
+            </h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>チームA名</label>
+                  <input 
+                    type="text" 
+                    value={scoreboardSettings.teamAName} 
+                    onChange={(e) => handleSettingChange('teamAName', e.target.value)}
+                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                  />
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>チームB名</label>
+                  <input 
+                    type="text" 
+                    value={scoreboardSettings.teamBName} 
+                    onChange={(e) => handleSettingChange('teamBName', e.target.value)}
+                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>最大セット数</label>
+                  <select 
+                    value={scoreboardSettings.maxSets} 
+                    onChange={(e) => handleSettingChange('maxSets', parseInt(e.target.value))}
+                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                  >
+                    <option value={1}>1セットマッチ</option>
+                    <option value={3}>3セットマッチ</option>
+                    <option value={5}>5セットマッチ</option>
+                  </select>
+                </div>
+
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>通常セット点数</label>
+                  <input 
+                    type="number" 
+                    min={1}
+                    value={inputNormalPoints} 
+                    onChange={(e) => setInputNormalPoints(e.target.value)}
+                    onBlur={() => {
+                      const val = parseInt(inputNormalPoints);
+                      if (!isNaN(val) && val >= 1) {
+                        handleSettingChange('normalSetPoints', val);
+                      } else {
+                        setInputNormalPoints(String(scoreboardSettings.normalSetPoints));
+                      }
+                    }}
+                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', textAlign: 'center', outline: 'none' }}
+                  />
+                </div>
+
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>最終セット点数</label>
+                  <input 
+                    type="number" 
+                    min={1}
+                    value={inputFinalPoints} 
+                    onChange={(e) => setInputFinalPoints(e.target.value)}
+                    onBlur={() => {
+                      const val = parseInt(inputFinalPoints);
+                      if (!isNaN(val) && val >= 1) {
+                        handleSettingChange('finalSetPoints', val);
+                      } else {
+                        setInputFinalPoints(String(scoreboardSettings.finalSetPoints));
+                      }
+                    }}
+                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', textAlign: 'center', outline: 'none' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>得点板サイズ (%)</label>
+                  <input 
+                    type="number" 
+                    min={10}
+                    max={300}
+                    value={inputOverlaySize} 
+                    onChange={(e) => setInputOverlaySize(e.target.value)}
+                    onBlur={() => {
+                      const val = parseInt(inputOverlaySize);
+                      if (!isNaN(val) && val >= 10 && val <= 300) {
+                        handleSettingChange('overlaySize', val);
+                      } else {
+                        setInputOverlaySize(String(scoreboardSettings.overlaySize));
+                      }
+                    }}
+                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', textAlign: 'center', outline: 'none' }}
+                  />
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 'bold' }}>得点板位置</label>
+                  <select 
+                    value={scoreboardSettings.overlayPosition} 
+                    onChange={(e) => handleSettingChange('overlayPosition', e.target.value as any)}
+                    style={{ padding: '10px', background: '#202024', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '14px', outline: 'none' }}
+                  >
+                    <option value="top-left">左上</option>
+                    <option value="top-right">右上</option>
+                    <option value="bottom-left">左下</option>
+                    <option value="bottom-right">右下</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <button 
+                onClick={() => setIsMatchSettingsModalOpen(false)}
+                style={{
+                  padding: '10px 24px',
+                  background: '#00e5ff',
+                  color: '#08080a',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#00bccc'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00e5ff'}
+              >
+                適用して閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  </div>
+
   )
 }
 
